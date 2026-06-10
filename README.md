@@ -137,7 +137,7 @@ uv run pytest hub/tests    # 461 tests: every charter surface compiles + executo
 
 ## Credit
 
-CanonSys began as a commissioned project — Jason La Barbera saw the need for agent governance early and funded the original work.
+CanonSys began as a commissioned project — [Jason La Barbera](https://github.com/ShortyLTD) saw the need for agent governance early and funded the original work.
 
 ---
 
