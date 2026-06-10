@@ -1,0 +1,150 @@
+charter "Large Wire Transfer Execution" v1.0
+
+# FINANCE Domain - PAYMENT_EXECUTION Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: SOX 302/404, OFAC Sanctions, Bank Secrecy Act
+
+packages:
+    - authorization
+    - certification
+    - core
+    - evidence
+    - freshness
+    - identity
+    - legal
+    - pattern
+    - policy
+    - workflow
+
+triggers:
+    payment_requested
+    fraud_screening_completed
+    recipient_verified
+    callback_completed
+    dual_approval_obtained
+    transfer_executed
+
+workflow large_wire_transfer:
+    phase request_intake:
+        await payment_requested
+        require verify_request_source_authenticated()
+        action derive_amount_band()
+        action create_workflow_run()
+        action save_evidence()
+        when amount_band == "SIGNIFICANT":
+            require require_dual_approval()
+        evidence payment_request_record
+
+    phase fraud_screening:
+        require request_intake.passed
+        require require_fraud_screening_pass()
+        action record_workflow_step()
+        await fraud_screening_completed
+        when fraud_status == "FLAG":
+            require require_dual_approval()
+            action record_workflow_step()
+        evidence fraud_screening_record
+
+    phase recipient_verification:
+        require fraud_screening.passed
+        action record_vendor_call()
+        action record_workflow_step()
+        await recipient_verified
+        when recipient_change_detected == true:
+            require require_dual_approval()
+            require verify_cfo_approval()
+        evidence recipient_verification_record
+
+    phase callback_verification:
+        require recipient_verification.passed
+        action record_vendor_call()
+        await callback_completed
+        when bank_detail_change_recent == true:
+            require require_dual_approval()
+        evidence callback_verification_record
+        certify hashable
+
+    phase approval_collection:
+        require callback_verification.passed
+        action derive_prior_action_count()
+        require verify_approval_chain_complete()
+        await dual_approval_obtained
+        when amount_band == "SIGNIFICANT":
+            require verify_cfo_approval()
+        when amount_band == "MATERIAL":
+            require verify_executive_approval()
+        when urgency == "CRITICAL":
+            require require_access_justification()
+        evidence approval_collection_record
+
+    phase evidence_binding:
+        require approval_collection.passed
+        require require_evidence_present()
+        action chain_evidence()
+        action verify_evidence_freshness()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass("wire_transfer")
+        require require_sox_compliance_review()
+        action evaluate_policy()
+        action derive_risk_tier()
+        evidence policy_evaluation_record
+
+    phase certification:
+        require policy_evaluation.passed
+        await transfer_executed
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        certify immutable
+        evidence wire_transfer_certificate
+
+situations:
+    when amount_band == "SIGNIFICANT":
+        require verify_cfo_approval()
+        require require_dual_approval()
+
+    when amount_band == "MATERIAL":
+        require verify_executive_approval()
+
+    when recipient_change_detected == true:
+        require require_dual_approval()
+        require verify_cfo_approval()
+
+    when jurisdiction == "OFAC_RISK":
+        require require_legal_review_complete()
+
+    when urgency == "CRITICAL":
+        require require_access_justification()
+
+    when risk_score_band == "HIGH":
+        require require_dual_approval()
+
+    when fraud_status == "FLAG":
+        require require_dual_approval()
+
+roles:
+    finance_analyst:
+        actions: [save_evidence, create_workflow_run, record_workflow_step]
+        requires_mfa: true
+
+    fraud_analyst:
+        actions: [record_workflow_step, record_vendor_call]
+        requires_mfa: true
+
+    treasury_ops:
+        actions: [record_vendor_call, chain_evidence]
+        requires_mfa: true
+
+    controller:
+        actions: [evaluate_policy, derive_risk_tier]
+        requires_mfa: true
+
+    cfo:
+        actions: [emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true

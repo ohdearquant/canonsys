@@ -1,0 +1,162 @@
+charter "Expense Policy Exception Authorization" v1.0
+
+# FINANCE Domain - EXPENSE_EXCEPTION Archetype
+# Risk Tier: MEDIUM
+# Regulatory Basis: IRS Publication 463, SOX 302/404, Company T&E Policy
+
+packages:
+    - authorization
+    - certification
+    - core
+    - evidence
+    - freshness
+    - identity
+    - justification
+    - pattern
+    - policy
+    - workflow
+
+triggers:
+    exception_requested
+    documentation_submitted
+    manager_approved
+    escalation_approved
+    exception_granted
+
+workflow expense_policy_exception:
+    phase request_intake:
+        await exception_requested
+        require verify_request_source_authenticated()
+        action derive_amount_band()
+        action derive_cumulative_exception_amount()
+        action create_workflow_run()
+        action save_evidence()
+        when overage_percentage > 50:
+            require verify_executive_approval()
+        evidence exception_request_record
+
+    phase documentation_verification:
+        require request_intake.passed
+        action check_receipt_freshness()
+        action record_workflow_step()
+        await documentation_submitted
+        when expense_category == "ENTERTAINMENT":
+            require require_type_specific_evidence()
+        evidence documentation_record
+        certify hashable
+
+    phase exception_reason_review:
+        require documentation_verification.passed
+        action validate_business_justification()
+        action classify_justification()
+        action map_reason_code_to_evidence()
+        when exception_reason_code == "CLIENT_REQUIREMENT":
+            require require_type_specific_evidence()
+        when exception_reason_code == "LOCATION_PREMIUM":
+            require require_type_specific_evidence()
+        when exception_reason_code == "URGENCY":
+            require require_access_justification()
+        evidence exception_reason_record
+
+    phase manager_approval:
+        require exception_reason_review.passed
+        action record_workflow_step()
+        await manager_approved
+        evidence manager_approval_record
+
+    phase pattern_analysis:
+        require manager_approval.passed
+        action derive_prior_action_count()
+        action check_pattern_threshold()
+        when exception_frequency_exceeds_threshold == true:
+            require verify_executive_approval()
+        when cumulative_exception_amount_exceeds_threshold == true:
+            require verify_cfo_approval()
+        when pattern_risk_band == "HIGH":
+            require verify_cfo_approval()
+        evidence pattern_analysis_record
+
+    phase escalation_approval:
+        require pattern_analysis.passed
+        require verify_approval_chain_complete()
+        await escalation_approved
+        when overage_percentage > 100:
+            require verify_cfo_approval()
+        when amount_band == "MATERIAL":
+            require verify_executive_approval()
+        evidence escalation_approval_record
+
+    phase evidence_binding:
+        require escalation_approval.passed
+        require require_evidence_present()
+        action chain_evidence()
+        action verify_evidence_freshness()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass("expense_policy_exception")
+        action evaluate_policy()
+        evidence policy_evaluation_record
+
+    phase certification:
+        require policy_evaluation.passed
+        await exception_granted
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        certify immutable
+        evidence expense_exception_certificate
+
+situations:
+    when overage_percentage > 50:
+        require verify_executive_approval()
+
+    when overage_percentage > 100:
+        require verify_cfo_approval()
+
+    when expense_category == "ENTERTAINMENT":
+        require require_type_specific_evidence()
+
+    when exception_reason_code == "CLIENT_REQUIREMENT":
+        require require_type_specific_evidence()
+
+    when exception_reason_code == "LOCATION_PREMIUM":
+        require require_type_specific_evidence()
+
+    when exception_frequency_exceeds_threshold == true:
+        require verify_executive_approval()
+
+    when cumulative_exception_amount_exceeds_threshold == true:
+        require verify_cfo_approval()
+
+    when pattern_risk_band == "HIGH":
+        require verify_cfo_approval()
+
+roles:
+    employee:
+        actions: [save_evidence, create_workflow_run, record_workflow_step]
+        requires_mfa: true
+
+    manager:
+        actions: [record_workflow_step]
+        requires_mfa: true
+
+    finance_analyst:
+        actions: [validate_business_justification, classify_justification, chain_evidence]
+        requires_mfa: true
+
+    vp:
+        actions: [record_workflow_step]
+        requires_mfa: true
+
+    controller:
+        actions: [evaluate_policy]
+        requires_mfa: true
+
+    cfo:
+        actions: [emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true

@@ -1,0 +1,160 @@
+charter "Disaster Recovery Test" v2.0
+
+packages:
+    - infra
+    - deployment
+    - controls
+    - evidence
+    - authorization
+    - lifecycle
+
+triggers:
+    dr_test_requested
+    compliance_dr_test_due
+    annual_bcp_exercise
+    regional_failover_drill
+
+workflow disaster_recovery_test:
+    phase eligibility:
+        require require_entity_exists()
+        require require_context_valid()
+        require require_dr_infrastructure_exists()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_facts_schema_valid()
+        require require_unknown_denied()
+        action submit_facts()
+        action define_test_scope()
+        evidence facts_packet
+
+    phase cooldown_check:
+        require facts.passed
+        require check_dr_test_cooldown()
+        action verify_prior_test_complete()
+        action query_test_history()
+        evidence cooldown_check_record
+        certify hashable
+
+        when dr_test_cooldown_active == "true":
+            require require_dual_approval()
+            require require_access_justification()
+
+    phase health_assessment:
+        require cooldown_check.passed
+        require require_dr_site_healthy()
+        action run_dr_health_check()
+        action verify_site_readiness()
+        action derive_utilization_volatility()
+        evidence health_assessment_record
+        certify hashable
+
+    phase sync_verification:
+        require health_assessment.passed
+        require require_data_sync_acceptable()
+        action check_replication_status()
+        action verify_sync_lag_acceptable()
+        action derive_data_loss_risk()
+        evidence sync_verification_record
+        certify hashable
+
+    phase rollback_preparation:
+        require sync_verification.passed
+        require verify_rollback_plan_present()
+        require require_rollback_tested()
+        action document_rollback_plan()
+        action test_rollback_procedure()
+        evidence rollback_preparation_record
+        certify hashable
+
+    phase stakeholder_notification:
+        require rollback_preparation.passed
+        require require_communication_plan()
+        action notify_stakeholders()
+        action verify_maintenance_window()
+        evidence stakeholder_notification_record
+        certify hashable
+
+        when test_scope == "FULL_SITE":
+            await maintenance_window_active
+
+    phase evidence_binding:
+        require stakeholder_notification.passed
+        require require_chain_of_custody_complete()
+        action bind_evidence()
+        action create_cep()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        action seal_cep()
+        action certify_decision()
+        certify immutable
+        evidence dr_test_certificate
+
+situations:
+    when dr_site_health == "RED":
+        require verify_ciso_approval()
+        require require_access_justification()
+
+    when dr_site_health == "YELLOW":
+        require require_dual_approval()
+
+    when dr_site_health == "UNKNOWN":
+        require require_dual_approval()
+
+    when data_sync_status == "BROKEN":
+        require verify_ciso_approval()
+        require require_access_justification()
+
+    when data_sync_status == "LAGGING":
+        require require_dual_approval()
+        require require_access_justification()
+
+    when data_sync_status == "UNKNOWN":
+        require require_dual_approval()
+
+    when test_scope == "FULL_SITE":
+        require verify_ciso_approval()
+        require verify_executive_approval()
+
+    when test_scope == "REGIONAL":
+        require verify_ciso_approval()
+        require require_dual_approval()
+
+    when rollback_plan_status == "NONE":
+        require verify_rollback_plan_present()
+        require require_rollback_tested()
+
+    when rollback_plan_status == "UNKNOWN":
+        require require_dual_approval()
+
+    when communication_plan_status == "NONE":
+        require require_communication_plan()
+
+roles:
+    sre_oncall:
+        actions: [submit_facts, define_test_scope, run_dr_health_check, check_replication_status]
+        requires_mfa: true
+
+    sre_lead:
+        actions: [verify_site_readiness, verify_sync_lag_acceptable, document_rollback_plan, test_rollback_procedure, certify_decision]
+        requires_mfa: true
+
+    platform_lead:
+        actions: [notify_stakeholders, verify_maintenance_window]
+        requires_mfa: true
+
+    ciso:
+        actions: [seal_cep]
+        requires_mfa: true
+        break_glass: true

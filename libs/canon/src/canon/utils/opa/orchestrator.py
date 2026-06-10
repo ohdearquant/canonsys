@@ -325,7 +325,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     - days_since: Days since a date
     - is_after/is_before: Date comparisons
 
-    CS-075 Human Review Bypass derived facts:
+    Human Review Bypass derived facts:
     - verify_calibration: Check model calibration is validated
     - verify_monitoring_config: Check monitoring configuration is verified
     - verify_dpia: Check DPIA covers automated decision-making
@@ -341,7 +341,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
             "days_since": self._days_since,
             "is_after": self._is_after,
             "is_before": self._is_before,
-            # CS-075 Human Review Bypass derived facts
+            # Human Review Bypass derived facts
             "verify_calibration": self._verify_calibration,
             "verify_monitoring_config": self._verify_monitoring_config,
             "verify_dpia": self._verify_dpia,
@@ -404,7 +404,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
         return date < threshold
 
     # =========================================================================
-    # CS-075 Human Review Bypass Derived Facts
+    # Human Review Bypass Derived Facts
     # =========================================================================
 
     def _verify_calibration(
@@ -414,7 +414,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     ) -> bool:
         """Verify model calibration is validated.
 
-        CS-075 derived fact: calibration_validated
+        Human Review Bypass derived fact: calibration_validated
         Checks that calibration report exists and calibration curve is within tolerance.
 
         Args:
@@ -444,7 +444,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     ) -> bool:
         """Verify monitoring configuration is set up.
 
-        CS-075 derived fact: monitoring_config_verified
+        Human Review Bypass derived fact: monitoring_config_verified
         Checks that monitoring configuration exists and has alerting thresholds.
 
         Args:
@@ -468,7 +468,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     ) -> bool:
         """Verify DPIA covers automated decision-making.
 
-        CS-075 derived fact: dpia_complete
+        Human Review Bypass derived fact: dpia_complete
         Checks that DPIA exists and explicitly covers automated decision-making.
 
         Args:
@@ -494,7 +494,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     ) -> bool:
         """Verify legal basis is documented.
 
-        CS-075 derived fact: legal_basis_documented
+        Human Review Bypass derived fact: legal_basis_documented
         Checks that legal basis memo exists and cites valid GDPR Art. 22 exception.
 
         Args:
@@ -520,7 +520,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     ) -> bool:
         """Verify model accuracy is validated and recent.
 
-        CS-075 derived fact: accuracy_validated
+        Human Review Bypass derived fact: accuracy_validated
         Checks accuracy report exists, accuracy exceeds threshold, and report is recent.
 
         Args:
@@ -557,7 +557,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     ) -> bool:
         """Verify fallback mechanism was tested recently.
 
-        CS-075 derived fact: fallback_mechanism_tested
+        Human Review Bypass derived fact: fallback_mechanism_tested
         Checks fallback test results exist and are within required window.
 
         Args:
@@ -591,7 +591,7 @@ class DefaultDerivedLibrary(DerivedLibrary):
     ) -> bool:
         """Verify appeal procedure is documented.
 
-        CS-075 derived fact: appeal_process_documented
+        Human Review Bypass derived fact: appeal_process_documented
         Checks appeal procedure exists and is accessible to affected parties.
 
         Args:

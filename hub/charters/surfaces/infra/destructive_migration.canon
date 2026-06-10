@@ -1,0 +1,119 @@
+charter "Destructive Schema Migration" v2.0
+
+packages:
+    - infra
+    - deployment
+    - controls
+    - evidence
+    - authorization
+    - lifecycle
+
+triggers:
+    migration_requested
+    schema_change_proposed
+    destructive_ddl_detected
+
+workflow destructive_schema_migration:
+    phase eligibility:
+        require require_entity_exists()
+        require require_context_valid()
+        require require_migration_pending()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_facts_schema_valid()
+        require require_unknown_denied()
+        action submit_facts()
+        action classify_destructive_operations()
+        evidence facts_packet
+
+    phase risk_assessment:
+        require facts.passed
+        action compute_blast_radius()
+        action derive_data_loss_risk()
+        action derive_dependent_backup_count()
+        evidence risk_assessment_record
+        certify hashable
+
+    phase backup_verification:
+        require risk_assessment.passed
+        require verify_backup_complete()
+        require require_backup_verified()
+        require require_rollback_tested()
+        action verify_restore_scope_coverage()
+        action verify_rollback_plan_present()
+        evidence backup_verification_packet
+        certify hashable
+
+        when environment == "PROD":
+            require require_production_environment()
+            require require_dual_approval()
+
+    phase evidence_binding:
+        require backup_verification.passed
+        require require_chain_of_custody_complete()
+        action bind_evidence()
+        action create_cep()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        action seal_cep()
+        action certify_decision()
+        certify immutable
+        evidence destructive_migration_certificate
+
+    phase lifecycle_setup:
+        require certification.passed
+        action schedule_auto_revert()
+        action enforce_expiry()
+        evidence lifecycle_record
+
+situations:
+    when environment == "PROD":
+        require require_deployment_approval()
+        require require_distinct_identities()
+
+    when data_loss_risk == "HIGH":
+        require require_dual_approval()
+        require verify_ciso_approval()
+
+    when data_loss_risk == "CRITICAL":
+        require require_dual_approval()
+        require verify_ciso_approval()
+        require verify_executive_approval()
+        waiting_period 24..72 hours
+
+    when rollback_feasible == "false":
+        require require_access_justification()
+        require verify_executive_approval()
+
+    when rows_impacted_band == "HIGH":
+        require require_dual_approval()
+
+    when dependent_backup_count == "0":
+        require verify_backup_complete()
+        require require_rollback_tested()
+
+roles:
+    engineer:
+        actions: [submit_facts, classify_destructive_operations, compute_blast_radius]
+        requires_mfa: true
+
+    sre_lead:
+        actions: [verify_restore_scope_coverage, verify_rollback_plan_present, schedule_auto_revert]
+        requires_mfa: true
+
+    dba_owner:
+        actions: [certify_decision, seal_cep]
+        requires_mfa: true
+        break_glass: true

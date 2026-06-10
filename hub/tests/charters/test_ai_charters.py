@@ -22,13 +22,13 @@ AI_CHARTERS_DIR = (
 # -----------------------------------------------------------------
 
 AI_CHARTER_FILES = [
-    "cs_072_model_deployment_override.canon",
-    "cs_073_training_data_inclusion.canon",
-    "cs_074_bias_assessment_waiver.canon",
-    "cs_075_human_review_bypass.canon",
-    "cs_076_agent_autonomy_grant.canon",
-    "cs_077_model_retirement_override.canon",
-    "cs_078_ai_incident_disclosure.canon",
+    "model_deployment_override.canon",
+    "training_data_inclusion.canon",
+    "bias_assessment_waiver.canon",
+    "human_review_bypass.canon",
+    "agent_autonomy_grant.canon",
+    "model_retirement_override.canon",
+    "ai_incident_disclosure.canon",
 ]
 
 
@@ -146,18 +146,18 @@ class TestAICharterSpecifics:
     """Tests for specific AI charter requirements."""
 
     def test_model_deployment_override_uses_bias_assessment(self):
-        """CS-072 should use require_bias_assessment_documented."""
-        source = (AI_CHARTERS_DIR / "cs_072_model_deployment_override.canon").read_text()
+        """Charter should use require_bias_assessment_documented."""
+        source = (AI_CHARTERS_DIR / "model_deployment_override.canon").read_text()
         assert "require_bias_assessment_documented" in source
 
     def test_human_review_bypass_uses_human_review_present(self):
-        """CS-075 should use require_human_review_present."""
-        source = (AI_CHARTERS_DIR / "cs_075_human_review_bypass.canon").read_text()
+        """Charter should use require_human_review_present."""
+        source = (AI_CHARTERS_DIR / "human_review_bypass.canon").read_text()
         assert "require_human_review_present" in source
 
     def test_bias_waiver_uses_ai_governance(self):
-        """CS-074 should use ai_governance package."""
-        source = (AI_CHARTERS_DIR / "cs_074_bias_assessment_waiver.canon").read_text()
+        """Charter should use ai_governance package."""
+        source = (AI_CHARTERS_DIR / "bias_assessment_waiver.canon").read_text()
         compiled = compile_charter(source)
         assert "ai_governance" in compiled.package_names
 

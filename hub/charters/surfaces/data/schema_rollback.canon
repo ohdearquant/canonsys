@@ -1,0 +1,152 @@
+charter "Schema Migration Rollback" v2.0
+
+packages:
+    - data_protection
+    - scope
+    - evidence
+    - policy
+
+triggers:
+    schema_rollback_requested
+    backup_verification_completed
+    rollback_executed
+
+workflow schema_rollback:
+    phase rollback_request:
+        await schema_rollback_requested
+        require require_evidence_present("rollback_request")
+        require verify_scope_definition()
+        action record_rollback_request()
+        evidence rollback_request_record
+
+    phase backup_verification:
+        require rollback_request.passed
+        await backup_verification_completed
+        require require_evidence_present("backup_verification")
+        require verify_dataset_snapshot_match()
+        action verify_backup_status()
+        evidence backup_verification_artifact
+        certify hashable
+
+    phase data_loss_assessment:
+        require backup_verification.passed
+        require derive_risk_tier()
+        action assess_data_loss_risk()
+        evidence data_loss_assessment_record
+
+    phase migration_analysis:
+        require data_loss_assessment.passed
+        require verify_scope_definition()
+        action analyze_migration_impact()
+        evidence migration_analysis_report
+
+    phase compatibility_testing:
+        require migration_analysis.passed
+        require require_evidence_present("compatibility_test")
+        action verify_application_compatibility()
+        evidence compatibility_test_results
+
+    phase staging_verification:
+        require compatibility_testing.passed
+        require verify_scope_manifest()
+        action verify_staging_rollback()
+        evidence staging_rollback_report
+
+    phase blast_radius_analysis:
+        require staging_verification.passed
+        require derive_risk_tier()
+        action assess_blast_radius()
+        evidence impact_analysis_doc
+
+    phase sre_approval:
+        require blast_radius_analysis.passed
+        action request_sre_approval()
+        evidence sre_approval_artifact
+
+    phase evidence_binding:
+        require sre_approval.passed
+        require create_cep()
+        require seal_cep()
+        require verify_cep_sealed()
+        action bind_evidence_packet()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy_evaluation.passed
+        await rollback_executed
+        require verify_chain_of_custody_complete()
+        action certify_decision()
+        certify immutable
+        evidence schema_rollback_certificate
+
+situations:
+    when environment == "PRODUCTION":
+        require derive_risk_tier()
+
+    when backup_age_band == "STALE":
+        require derive_risk_tier()
+
+    when data_loss_risk == "UNKNOWN":
+        require derive_risk_tier()
+
+    when data_loss_risk == "PERMANENT":
+        require require_chain_of_custody_complete()
+
+    when data_loss_risk == "RECOVERABLE":
+        require verify_scope_manifest()
+
+    when application_compatibility == "UNKNOWN":
+        require derive_risk_tier()
+
+    when application_compatibility == "BREAKING":
+        require verify_stakeholder_notification_complete()
+
+    when staging_test_passed == "YES":
+        require verify_dataset_snapshot_match()
+
+    when staging_test_passed == "NO":
+        require derive_risk_tier()
+
+    when blast_radius == "HIGH":
+        require verify_stakeholder_notification_complete()
+
+    when blast_radius == "CRITICAL":
+        require verify_stakeholder_notification_complete()
+        require require_chain_of_custody_complete()
+
+    when incident_declared == "YES":
+        require require_evidence_present("incident_record")
+
+    when downstream_systems_notified == "NO":
+        require verify_stakeholder_notification_complete()
+
+roles:
+    database_admin:
+        actions: [record_rollback_request, verify_backup_status, assess_data_loss_risk, analyze_migration_impact]
+        requires_mfa: true
+
+    sre_engineer:
+        actions: [verify_application_compatibility, verify_staging_rollback, assess_blast_radius]
+        requires_mfa: true
+
+    sre_lead:
+        actions: [request_sre_approval, certify_decision, bind_evidence_packet]
+        requires_mfa: true
+        break_glass: true
+
+    head_of_platform:
+        actions: [certify_decision]
+        requires_mfa: true
+        break_glass: true
+
+    incident_commander:
+        actions: [certify_decision]
+        requires_mfa: true
+        break_glass: true

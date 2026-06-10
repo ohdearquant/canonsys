@@ -22,14 +22,14 @@ LEGAL_CHARTERS_DIR = (
 # -----------------------------------------------------------------
 
 LEGAL_CHARTER_FILES = [
-    "cs_008_legal_hold.canon",
-    "cs_065_litigation_hold_release.canon",
-    "cs_066_privilege_waiver.canon",
-    "cs_067_settlement_authority.canon",
-    "cs_068_regulatory_disclosure.canon",
-    "cs_069_contract_amendment.canon",
-    "cs_070_ip_assignment.canon",
-    "cs_071_indemnification_waiver.canon",
+    "legal_hold.canon",
+    "litigation_hold_release.canon",
+    "privilege_waiver.canon",
+    "settlement_authority.canon",
+    "regulatory_disclosure.canon",
+    "contract_amendment.canon",
+    "ip_assignment.canon",
+    "indemnification_waiver.canon",
 ]
 
 
@@ -150,8 +150,8 @@ class TestSpecificLegalCharters:
     """Tests for specific legal charter requirements."""
 
     def test_legal_hold_has_hold_events(self):
-        """CS-008 Legal Hold should have hold-related triggers."""
-        source = (LEGAL_CHARTERS_DIR / "cs_008_legal_hold.canon").read_text()
+        """Charter Legal Hold should have hold-related triggers."""
+        source = (LEGAL_CHARTERS_DIR / "legal_hold.canon").read_text()
         compiled = compile_charter(source)
 
         trigger_names = {t.name for t in compiled.ast.triggers}
@@ -159,8 +159,8 @@ class TestSpecificLegalCharters:
         assert "hold_activated" in trigger_names
 
     def test_litigation_hold_release_has_release_events(self):
-        """CS-065 Litigation Hold Release should have release triggers."""
-        source = (LEGAL_CHARTERS_DIR / "cs_065_litigation_hold_release.canon").read_text()
+        """Charter Litigation Hold Release should have release triggers."""
+        source = (LEGAL_CHARTERS_DIR / "litigation_hold_release.canon").read_text()
         compiled = compile_charter(source)
 
         trigger_names = {t.name for t in compiled.ast.triggers}
@@ -169,8 +169,8 @@ class TestSpecificLegalCharters:
         assert "release_executed" in trigger_names
 
     def test_privilege_waiver_has_gc_authorization(self):
-        """CS-066 Privilege Waiver should have GC authorization trigger."""
-        source = (LEGAL_CHARTERS_DIR / "cs_066_privilege_waiver.canon").read_text()
+        """Charter Privilege Waiver should have GC authorization trigger."""
+        source = (LEGAL_CHARTERS_DIR / "privilege_waiver.canon").read_text()
         compiled = compile_charter(source)
 
         trigger_names = {t.name for t in compiled.ast.triggers}
@@ -178,8 +178,8 @@ class TestSpecificLegalCharters:
         assert "waiver_executed" in trigger_names
 
     def test_settlement_authority_has_board_process(self):
-        """CS-067 Settlement Authority should have board process trigger."""
-        source = (LEGAL_CHARTERS_DIR / "cs_067_settlement_authority.canon").read_text()
+        """Charter Settlement Authority should have board process trigger."""
+        source = (LEGAL_CHARTERS_DIR / "settlement_authority.canon").read_text()
         compiled = compile_charter(source)
 
         trigger_names = {t.name for t in compiled.ast.triggers}
@@ -187,8 +187,8 @@ class TestSpecificLegalCharters:
         assert "settlement_executed" in trigger_names
 
     def test_regulatory_disclosure_has_gc_authorization(self):
-        """CS-068 Regulatory Disclosure should have GC authorization."""
-        source = (LEGAL_CHARTERS_DIR / "cs_068_regulatory_disclosure.canon").read_text()
+        """Charter Regulatory Disclosure should have GC authorization."""
+        source = (LEGAL_CHARTERS_DIR / "regulatory_disclosure.canon").read_text()
         compiled = compile_charter(source)
 
         trigger_names = {t.name for t in compiled.ast.triggers}
@@ -196,14 +196,14 @@ class TestSpecificLegalCharters:
         assert "disclosure_transmitted" in trigger_names
 
     def test_regulatory_disclosure_has_data_protection_package(self):
-        """CS-068 Regulatory Disclosure should use data_protection package for PII."""
-        source = (LEGAL_CHARTERS_DIR / "cs_068_regulatory_disclosure.canon").read_text()
+        """Charter Regulatory Disclosure should use data_protection package for PII."""
+        source = (LEGAL_CHARTERS_DIR / "regulatory_disclosure.canon").read_text()
         compiled = compile_charter(source)
         assert "data_protection" in compiled.package_names
 
     def test_contract_amendment_has_financial_analysis(self):
-        """CS-069 Contract Amendment should have financial analysis trigger."""
-        source = (LEGAL_CHARTERS_DIR / "cs_069_contract_amendment.canon").read_text()
+        """Charter Contract Amendment should have financial analysis trigger."""
+        source = (LEGAL_CHARTERS_DIR / "contract_amendment.canon").read_text()
         compiled = compile_charter(source)
 
         trigger_names = {t.name for t in compiled.ast.triggers}
@@ -211,8 +211,8 @@ class TestSpecificLegalCharters:
         assert "amendment_executed" in trigger_names
 
     def test_ip_assignment_has_strategic_phases(self):
-        """CS-070 IP Assignment should have valuation and strategic phases."""
-        source = (LEGAL_CHARTERS_DIR / "cs_070_ip_assignment.canon").read_text()
+        """Charter IP Assignment should have valuation and strategic phases."""
+        source = (LEGAL_CHARTERS_DIR / "ip_assignment.canon").read_text()
         compiled = compile_charter(source)
 
         workflow_name = compiled.workflow_names[0]
@@ -222,8 +222,8 @@ class TestSpecificLegalCharters:
         assert "strategic_classification" in phase_order
 
     def test_indemnification_waiver_has_exposure_analysis(self):
-        """CS-071 Indemnification Waiver should have exposure analysis."""
-        source = (LEGAL_CHARTERS_DIR / "cs_071_indemnification_waiver.canon").read_text()
+        """Charter Indemnification Waiver should have exposure analysis."""
+        source = (LEGAL_CHARTERS_DIR / "indemnification_waiver.canon").read_text()
         compiled = compile_charter(source)
 
         workflow_name = compiled.workflow_names[0]

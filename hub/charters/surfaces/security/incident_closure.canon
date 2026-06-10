@@ -1,0 +1,176 @@
+charter "Security Incident Closure" v1.0
+
+# SECURITY Domain - INCIDENT_LIFECYCLE Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: GDPR Art. 33, HIPAA 164.308, SOC 2 CC7.2-CC7.4, NIST SP 800-61
+
+packages:
+    - incident
+    - evidence
+    - certification
+    - authorization
+    - controls
+    - lifecycle
+    - policy
+    - legal
+    - workflow
+    - timing
+
+triggers:
+    incident_declared
+    containment_initiated
+    root_cause_documented
+    persistence_hunt_completed
+    observation_window_closed
+    notification_decision_recorded
+    legal_review_completed
+    ciso_approves
+    incident_closed
+
+workflow security_incident_closure:
+    phase incident_validation:
+        await incident_declared
+        require require_incident_declared()
+        action verify_case_integrity()
+        action create_workflow_run()
+        action save_evidence()
+        when severity == "CRITICAL":
+            require require_dual_approval()
+        when severity == "HIGH":
+            require verify_ciso_approval()
+        evidence incident_declaration_record
+
+    phase containment_verification:
+        require incident_validation.passed
+        await containment_initiated
+        require require_containment_verified()
+        action assess_control_coverage()
+        action chain_evidence()
+        when containment_scope == "FULL_KILLCHAIN":
+            require verify_ciso_approval()
+        when containment_scope == "PARTIAL":
+            require require_access_justification()
+        evidence containment_verification_record
+        certify hashable
+
+    phase root_cause_analysis:
+        require containment_verification.passed
+        await root_cause_documented
+        require require_root_cause_identified()
+        action get_case_history()
+        action chain_evidence()
+        when confidence_level == "HIGH":
+            action record_workflow_step()
+        when confidence_level == "MEDIUM":
+            require require_dual_approval()
+        when confidence_level == "LOW":
+            require require_dual_approval()
+            require verify_ciso_approval()
+        evidence root_cause_analysis_record
+        certify hashable
+
+    phase persistence_hunt:
+        require root_cause_analysis.passed
+        await persistence_hunt_completed
+        action derive_compensating_logging_coverage()
+        action verify_sanitization_profile()
+        action record_workflow_step()
+        evidence persistence_hunt_record
+
+    phase observation_window:
+        require persistence_hunt.passed
+        await observation_window_closed
+        action verify_rule_expired()
+        action get_case_evidence()
+        when recurrence_detected == true:
+            require require_containment_verified()
+        evidence observation_record
+
+    phase notification_decision:
+        require observation_window.passed
+        await notification_decision_recorded
+        action record_attestation()
+        action record_workflow_step()
+        when notification_required == "YES":
+            require require_legal_review_complete()
+        when notification_required == "CONDITIONAL":
+            require verify_gc_approval()
+        evidence notification_decision_record
+
+    phase legal_signoff:
+        require notification_decision.passed
+        await legal_review_completed
+        require verify_gc_approval()
+        action chain_evidence()
+        when incident_type == "DATA_BREACH":
+            require verify_board_approval()
+        evidence legal_signoff_record
+
+    phase lessons_learned:
+        require legal_signoff.passed
+        action get_case_history()
+        action record_attestation()
+        evidence lessons_learned_record
+        certify hashable
+
+    phase ciso_approval:
+        require lessons_learned.passed
+        await ciso_approves
+        require verify_ciso_approval()
+        action verify_approval_chain_complete()
+        evidence ciso_approval_record
+
+    phase certification:
+        require ciso_approval.passed
+        await incident_closed
+        action evaluate_policy()
+        action verify_case_integrity()
+        action emit_certificate()
+        action complete_workflow_run()
+        certify immutable
+        evidence incident_closure_certificate
+
+situations:
+    when severity == "CRITICAL":
+        require verify_ciso_approval()
+        require verify_executive_approval()
+
+    when severity == "HIGH":
+        require verify_ciso_approval()
+
+    when incident_type == "DATA_BREACH":
+        waiting_period 1..72 hours
+        require verify_gc_approval()
+
+    when jurisdiction == "GDPR":
+        waiting_period 0..72 hours
+
+    when jurisdiction == "HIPAA":
+        waiting_period 0..60 days
+
+roles:
+    soc_analyst:
+        actions: [save_evidence, chain_evidence, record_workflow_step]
+        requires_mfa: true
+
+    incident_commander:
+        actions: [assess_control_coverage, derive_compensating_logging_coverage, verify_sanitization_profile]
+        requires_mfa: true
+
+    threat_hunter:
+        actions: [record_workflow_step, get_case_evidence]
+        requires_mfa: true
+
+    security_lead:
+        actions: [record_attestation, emit_certificate, complete_workflow_run]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [verify_approval_chain_complete]
+        requires_mfa: true
+        break_glass: true
+
+    ciso:
+        actions: [emit_certificate, complete_workflow_run]
+        requires_mfa: true
+        break_glass: true

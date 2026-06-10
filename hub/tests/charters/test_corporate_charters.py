@@ -25,11 +25,11 @@ CORPORATE_CHARTERS_DIR = (
 # -----------------------------------------------------------------
 
 CORPORATE_CHARTER_FILES = [
-    "cs_079_due_diligence_access.canon",
-    "cs_080_integration_system_link.canon",
-    "cs_081_carve_out_execution.canon",
-    "cs_082_material_change_disclosure.canon",
-    "cs_083_closing_condition_waiver.canon",
+    "due_diligence_access.canon",
+    "integration_system_link.canon",
+    "carve_out_execution.canon",
+    "material_change_disclosure.canon",
+    "closing_condition_waiver.canon",
 ]
 
 
@@ -147,23 +147,23 @@ class TestCorporateCharterSpecifics:
     """Tests for specific Corporate charter requirements."""
 
     def test_due_diligence_uses_clean_team(self):
-        """CS-079 should use derive_clean_team_required."""
-        source = (CORPORATE_CHARTERS_DIR / "cs_079_due_diligence_access.canon").read_text()
+        """Charter should use derive_clean_team_required."""
+        source = (CORPORATE_CHARTERS_DIR / "due_diligence_access.canon").read_text()
         assert "derive_clean_team_required" in source
 
     def test_carve_out_uses_readiness(self):
-        """CS-081 should use derive_carve_out_readiness."""
-        source = (CORPORATE_CHARTERS_DIR / "cs_081_carve_out_execution.canon").read_text()
+        """Charter should use derive_carve_out_readiness."""
+        source = (CORPORATE_CHARTERS_DIR / "carve_out_execution.canon").read_text()
         assert "derive_carve_out_readiness" in source
 
     def test_closing_waiver_uses_condition_status(self):
-        """CS-083 should use derive_condition_satisfaction_status."""
-        source = (CORPORATE_CHARTERS_DIR / "cs_083_closing_condition_waiver.canon").read_text()
+        """Charter should use derive_condition_satisfaction_status."""
+        source = (CORPORATE_CHARTERS_DIR / "closing_condition_waiver.canon").read_text()
         assert "derive_condition_satisfaction_status" in source
 
     def test_integration_link_uses_findings_addressed(self):
-        """CS-080 should use derive_conditional_findings_addressed."""
-        source = (CORPORATE_CHARTERS_DIR / "cs_080_integration_system_link.canon").read_text()
+        """Charter should use derive_conditional_findings_addressed."""
+        source = (CORPORATE_CHARTERS_DIR / "integration_system_link.canon").read_text()
         assert "derive_conditional_findings_addressed" in source
 
 

@@ -5,7 +5,7 @@ Complete vertical slice:
 - Tracks department-level budget shuffling
 - Detects circumvention of material change thresholds
 
-CS-056: Detect budget shuffling where many small reallocations
+this surface: Detect budget shuffling where many small reallocations
 circumvent material change thresholds.
 
 Compliance Context:
@@ -74,7 +74,7 @@ async def derive_cumulative_reallocation_amount(
 ) -> dict:
     """Track budget reallocation patterns for a department.
 
-    CS-056: Detect budget shuffling where many small reallocations
+    this surface: Detect budget shuffling where many small reallocations
     circumvent material change thresholds.
 
     Args:

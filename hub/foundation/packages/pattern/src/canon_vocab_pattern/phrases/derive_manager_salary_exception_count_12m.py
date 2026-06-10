@@ -6,7 +6,6 @@ Complete vertical slice:
 - Detects systematic salary exception abuse
 
 Regulatory: Pay equity - detects systematic exception abuse.
-Control: CS-014
 
 Compliance Context:
     - Pay equity: Salary band enforcement
@@ -64,7 +63,6 @@ async def derive_manager_salary_exception_count_12m(
     outside approved bands. Pattern indicates potential pay equity issues.
 
     Regulatory: Pay equity - detects systematic exception abuse.
-    Control: CS-014
 
     Args:
         options: Options with manager_id, threshold (default: 3)

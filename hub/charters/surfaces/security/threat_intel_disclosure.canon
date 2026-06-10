@@ -1,0 +1,167 @@
+charter "Threat Intel Disclosure" v1.0
+
+# SECURITY Domain - DATA_RELEASE Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: CISA, NIST CSF, ISO 27001 A.6.1.3, STIX/TAXII TLP Protocol
+
+packages:
+    - controls
+    - evidence
+    - certification
+    - authorization
+    - legal
+    - policy
+    - data_protection
+    - workflow
+    - timing
+
+triggers:
+    disclosure_requested
+    classification_verified
+    sanitization_completed
+    recipient_vetted
+    sharing_agreement_validated
+    legal_approves
+    ciso_approves
+    intel_disclosed
+
+workflow threat_intel_disclosure:
+    phase disclosure_request:
+        await disclosure_requested
+        require require_access_justification()
+        action create_workflow_run()
+        action save_evidence()
+        when classification == "TLP_RED":
+            require require_access_justification()
+            require verify_ciso_approval()
+        when classification == "TLP_AMBER":
+            require verify_ciso_approval()
+        evidence disclosure_request_record
+
+    phase classification_review:
+        require disclosure_request.passed
+        await classification_verified
+        action chain_evidence()
+        action record_attestation()
+        when contains_internal_indicators == "YES":
+            require require_dual_approval()
+        when contains_detection_signatures == "YES":
+            require verify_ciso_approval()
+        evidence classification_review_record
+        certify hashable
+
+    phase sanitization:
+        require classification_review.passed
+        await sanitization_completed
+        action verify_sanitization_profile()
+        action chain_evidence()
+        action record_workflow_step()
+        when sanitization_level == "FULL":
+            action record_workflow_step()
+        when sanitization_level == "PARTIAL":
+            require require_access_justification()
+        evidence sanitization_record
+        certify hashable
+
+    phase recipient_vetting:
+        require sanitization.passed
+        await recipient_vetted
+        action verify_approval_chain_complete()
+        when recipient_type == "PUBLIC":
+            require require_dual_approval()
+        when recipient_trust_level == "LOW":
+            require verify_ciso_approval()
+        evidence recipient_vetting_record
+
+    phase sharing_agreement:
+        require recipient_vetting.passed
+        await sharing_agreement_validated
+        require verify_gc_approval()
+        require require_nda_valid()
+        action chain_evidence()
+        when recipient_type == "ISAC":
+            action record_workflow_step()
+        when recipient_type == "GOVERNMENT":
+            action record_workflow_step()
+        when recipient_type == "VENDOR":
+            require verify_gc_approval()
+        evidence sharing_agreement_record
+        certify hashable
+
+    phase legal_review:
+        require sharing_agreement.passed
+        await legal_approves
+        require verify_gc_approval()
+        require require_legal_review_complete()
+        when contains_incident_details == "YES":
+            require require_dual_approval()
+        evidence legal_review_record
+
+    phase ciso_approval:
+        require legal_review.passed
+        await ciso_approves
+        require verify_ciso_approval()
+        action verify_approval_chain_complete()
+        evidence ciso_approval_record
+
+    phase disclosure_execution:
+        require ciso_approval.passed
+        await intel_disclosed
+        action evaluate_policy()
+        action record_attestation()
+        action get_case_history()
+        evidence disclosure_execution_record
+
+    phase certification:
+        require disclosure_execution.passed
+        action verify_case_integrity()
+        action emit_certificate()
+        action complete_workflow_run()
+        certify immutable
+        evidence disclosure_certificate
+
+situations:
+    when classification == "TLP_RED":
+        require verify_ciso_approval()
+        require verify_executive_approval()
+
+    when classification == "TLP_AMBER":
+        require verify_ciso_approval()
+
+    when recipient_type == "PUBLIC":
+        require require_dual_approval()
+
+    when contains_internal_indicators == "YES":
+        require require_dual_approval()
+
+    when contains_detection_signatures == "YES":
+        require verify_ciso_approval()
+
+    when contains_incident_details == "YES":
+        require verify_gc_approval()
+
+    when recipient_trust_level == "LOW":
+        require verify_ciso_approval()
+
+roles:
+    threat_analyst:
+        actions: [save_evidence, chain_evidence, record_workflow_step]
+        requires_mfa: true
+
+    intel_manager:
+        actions: [verify_sanitization_profile, verify_approval_chain_complete]
+        requires_mfa: true
+
+    security_lead:
+        actions: [record_attestation, emit_certificate, complete_workflow_run]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [verify_approval_chain_complete]
+        requires_mfa: true
+        break_glass: true
+
+    ciso:
+        actions: [emit_certificate, complete_workflow_run]
+        requires_mfa: true
+        break_glass: true

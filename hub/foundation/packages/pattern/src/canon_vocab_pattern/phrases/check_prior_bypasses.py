@@ -6,7 +6,6 @@ Complete vertical slice:
 - Detects frequent security control bypasses for specific applications
 
 Regulatory: Application security - detects bypass abuse.
-Control: CS-019
 
 Compliance Context:
     - SOC 2 CC6.1: Logical access controls
@@ -74,7 +73,6 @@ async def check_prior_bypasses(
     application. Pattern may indicate improper access needs or policy abuse.
 
     Regulatory: Application security - detects bypass abuse.
-    Control: CS-019
 
     Args:
         options: Options with subject_id, app_id, days, threshold (default: 2)

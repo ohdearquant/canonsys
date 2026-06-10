@@ -4,7 +4,7 @@ version = "2026.01.0"
 description = "M&A compliance: clean team requirements, carve-out readiness, condition satisfaction, and findings."
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Ocean (HaiyangLi)", email = "ocean@canonsys.com" }]
+authors = [{ name = "Ocean (HaiyangLi)", email = "ocean@lionagi.ai" }]
 
 dependencies = [
     "canon",

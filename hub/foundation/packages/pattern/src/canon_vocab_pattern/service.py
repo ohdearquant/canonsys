@@ -63,39 +63,39 @@ class PatternService(CanonService):
 
     @action(skip_evidence=True)
     async def derive_manager_bypass_count_12m(self, payload: dict, ctx: RequestContext) -> dict:
-        """CS-013: Derive manager posting bypass count over 12 months."""
+        """this surface: Derive manager posting bypass count over 12 months."""
         return await derive_manager_bypass_count_12m(payload, ctx)
 
     @action(skip_evidence=True)
     async def derive_manager_salary_exception_count_12m(
         self, payload: dict, ctx: RequestContext
     ) -> dict:
-        """CS-014: Derive manager salary exception count over 12 months."""
+        """this surface: Derive manager salary exception count over 12 months."""
         return await derive_manager_salary_exception_count_12m(payload, ctx)
 
     @action(skip_evidence=True)
     async def check_prior_escalations(self, payload: dict, ctx: RequestContext) -> dict:
-        """CS-003: Check prior privilege escalations."""
+        """this surface: Check prior privilege escalations."""
         return await check_prior_escalations(payload, ctx)
 
     @action(skip_evidence=True)
     async def check_prior_exemptions(self, payload: dict, ctx: RequestContext) -> dict:
-        """CS-018: Check prior MFA exemptions."""
+        """this surface: Check prior MFA exemptions."""
         return await check_prior_exemptions(payload, ctx)
 
     @action(skip_evidence=True)
     async def check_prior_bypasses(self, payload: dict, ctx: RequestContext) -> dict:
-        """CS-019: Check prior application bypasses."""
+        """this surface: Check prior application bypasses."""
         return await check_prior_bypasses(payload, ctx)
 
     @action(skip_evidence=True)
     async def derive_cumulative_reallocation_amount(
         self, payload: dict, ctx: RequestContext
     ) -> dict:
-        """CS-056: Derive cumulative budget reallocation amount."""
+        """this surface: Derive cumulative budget reallocation amount."""
         return await derive_cumulative_reallocation_amount(payload, ctx)
 
     @action(skip_evidence=True)
     async def derive_cumulative_exception_amount(self, payload: dict, ctx: RequestContext) -> dict:
-        """CS-058: Derive cumulative expense exception amount."""
+        """this surface: Derive cumulative expense exception amount."""
         return await derive_cumulative_exception_amount(payload, ctx)

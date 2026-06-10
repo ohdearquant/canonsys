@@ -125,13 +125,13 @@ class Charter:
 class CharterSurfaceBinding:
     """Binding between a Charter and a Control Surface.
 
-    Links a charter to a specific control surface (e.g., CS-001 Termination,
-    CS-015 Background Check) with its policy configuration and evidence
+    Links a charter to a specific control surface (e.g., this surface Termination,
+    this surface Background Check) with its policy configuration and evidence
     requirements.
 
     Attributes:
         charter_id: Parent charter this binding belongs to.
-        surface_id: Control surface identifier (e.g., "CS-001").
+        surface_id: Control surface identifier (e.g., "this surface").
         policy_version: Hash of the Rego policy governing this surface.
         enabled: Whether this surface is active for enforcement.
         evidence_requirements: List of evidence types required for decisions
@@ -144,7 +144,7 @@ class CharterSurfaceBinding:
     Example:
         CharterSurfaceBinding(
             charter_id=uuid4(),
-            surface_id="CS-001",
+            surface_id="this surface",
             policy_version="sha256:abc123...",
             enabled=True,
             evidence_requirements=[
@@ -156,7 +156,7 @@ class CharterSurfaceBinding:
     """
 
     charter_id: UUID
-    surface_id: str  # Control surface ID: "CS-001", "CS-015"
+    surface_id: str  # Control surface ID: "this surface", "this surface"
     policy_version: str  # Hash of Rego policy: "sha256:..."
     enabled: bool
     evidence_requirements: tuple[str, ...] = field(default_factory=tuple)
@@ -225,7 +225,7 @@ class CharterSurfaceBindingContent:
 
     Example:
         binding = CharterSurfaceBindingContent(
-            surface_id="CS-001",
+            surface_id="this surface",
             policy_version="sha256:abc123...",
             enabled=True,
             evidence_requirements=[

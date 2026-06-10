@@ -1,0 +1,175 @@
+charter "Penetration Test Scope" v1.0
+
+# SECURITY Domain - ENGAGEMENT_AUTHORIZATION Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: SOC 2 CC4.1, PCI-DSS 11.3, ISO 27001 A.12.6.1, NIST SP 800-115
+
+packages:
+    - authorization
+    - evidence
+    - certification
+    - controls
+    - legal
+    - policy
+    - lifecycle
+    - workflow
+    - timing
+    - deployment
+
+triggers:
+    engagement_initiated
+    scope_defined
+    rules_negotiated
+    stakeholders_notified
+    legal_authorization_obtained
+    safeguards_documented
+    ciso_approves
+    engagement_started
+    engagement_completed
+
+workflow penetration_test_scope:
+    phase engagement_initiation:
+        await engagement_initiated
+        require require_access_justification()
+        action create_workflow_run()
+        action save_evidence()
+        when target_environment == "PRODUCTION":
+            require verify_ciso_approval()
+        when target_environment == "HYBRID":
+            require verify_ciso_approval()
+        evidence engagement_initiation_record
+
+    phase scope_definition:
+        require engagement_initiation.passed
+        await scope_defined
+        action chain_evidence()
+        action record_attestation()
+        when target_systems_count > 100:
+            require require_dual_approval()
+        evidence scope_definition_record
+        certify hashable
+
+    phase rules_of_engagement:
+        require scope_definition.passed
+        await rules_negotiated
+        action verify_approval_chain_complete()
+        action chain_evidence()
+        when includes_destructive == "YES":
+            require verify_executive_approval()
+        evidence rules_of_engagement_record
+        certify hashable
+
+    phase stakeholder_notification:
+        require rules_of_engagement.passed
+        await stakeholders_notified
+        action save_evidence()
+        action record_workflow_step()
+        when includes_social_engineering == "YES":
+            require verify_hr_approval()
+            require verify_gc_approval()
+        when includes_physical == "YES":
+            require verify_gc_approval()
+        evidence stakeholder_notification_record
+
+    phase legal_authorization:
+        require stakeholder_notification.passed
+        await legal_authorization_obtained
+        require verify_gc_approval()
+        require require_nda_valid()
+        action chain_evidence()
+        when external_vendor == true:
+            require verify_gc_approval()
+        evidence legal_authorization_record
+        certify hashable
+
+    phase production_safeguards:
+        require legal_authorization.passed
+        await safeguards_documented
+        action assess_control_coverage()
+        action schedule_auto_revert()
+        when target_environment == "PRODUCTION":
+            require require_rollback_tested()
+            action verify_rollback_plan_present()
+        evidence production_safeguards_record
+
+    phase data_handling_agreement:
+        require production_safeguards.passed
+        action record_attestation()
+        action chain_evidence()
+        when data_handling == "RETAIN":
+            require verify_gc_approval()
+        evidence data_handling_record
+        certify hashable
+
+    phase ciso_approval:
+        require data_handling_agreement.passed
+        await ciso_approves
+        require verify_ciso_approval()
+        action verify_approval_chain_complete()
+        evidence ciso_approval_record
+
+    phase engagement_execution:
+        require ciso_approval.passed
+        await engagement_started
+        action evaluate_policy()
+        action enforce_expiry()
+        evidence engagement_start_record
+
+    phase engagement_closure:
+        require engagement_execution.passed
+        await engagement_completed
+        action verify_override_reverted()
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action complete_workflow_run()
+        certify immutable
+        evidence pentest_closure_certificate
+
+situations:
+    when target_environment == "PRODUCTION":
+        require verify_ciso_approval()
+
+    when target_environment == "ALL":
+        require verify_ciso_approval()
+        require verify_executive_approval()
+
+    when includes_social_engineering == "YES":
+        require verify_hr_approval()
+        require verify_gc_approval()
+
+    when includes_physical == "YES":
+        require verify_gc_approval()
+
+    when includes_destructive == "YES":
+        require verify_executive_approval()
+
+    when external_vendor == true:
+        require verify_gc_approval()
+
+roles:
+    security_lead:
+        actions: [save_evidence, chain_evidence, record_attestation]
+        requires_mfa: true
+
+    pentest_coordinator:
+        actions: [record_workflow_step, verify_approval_chain_complete]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [verify_approval_chain_complete]
+        requires_mfa: true
+        break_glass: true
+
+    operations_owner:
+        actions: [assess_control_coverage, schedule_auto_revert, verify_rollback_plan_present]
+        requires_mfa: true
+
+    hr_manager:
+        actions: [verify_approval_chain_complete]
+        requires_mfa: true
+
+    ciso:
+        actions: [emit_certificate, complete_workflow_run]
+        requires_mfa: true
+        break_glass: true

@@ -179,60 +179,51 @@ class TestDecisionClass:
     def test_is_str_enum(self):
         """DecisionClass members are strings."""
         assert isinstance(DecisionClass.LAYOFF_RIF_INCLUSION, str)
-        assert DecisionClass.LAYOFF_RIF_INCLUSION == "CS-001"
+        assert DecisionClass.LAYOFF_RIF_INCLUSION == "layoff_rif_inclusion"
 
-    def test_member_count(self):
-        """All 92 decision classes are defined."""
-        assert len(DecisionClass) == 92
+    def test_values_are_slugs(self):
+        """Every value is the snake_case form of its member name."""
+        for m in DecisionClass:
+            assert m.value == m.name.lower()
 
-    def test_code_values_sequential(self):
-        """All CS-NNN codes from 001 to 092 are present."""
-        codes = {m.value for m in DecisionClass}
-        expected = {f"CS-{i:03d}" for i in range(1, 93)}
-        assert codes == expected
+    def test_values_unique(self):
+        """No duplicate identifiers."""
+        codes = [m.value for m in DecisionClass]
+        assert len(codes) == len(set(codes))
 
     def test_code_property(self):
-        """code property returns the CS-NNN value."""
-        assert DecisionClass.LAYOFF_RIF_INCLUSION.code == "CS-001"
-        assert DecisionClass.LEGAL_DATA_RELEASE.code == "CS-092"
-
-    def test_number_property(self):
-        """number property returns the integer portion."""
-        assert DecisionClass.LAYOFF_RIF_INCLUSION.number == 1
-        assert DecisionClass.LEGAL_DATA_RELEASE.number == 92
-        assert DecisionClass.WIRE_TRANSFER.number == 9
-        assert DecisionClass.INCIDENT_CLOSURE.number == 10
+        """code property returns the identifier value."""
+        assert DecisionClass.LAYOFF_RIF_INCLUSION.code == "layoff_rif_inclusion"
+        assert DecisionClass.LEGAL_DATA_RELEASE.code == "legal_data_release"
 
     def test_from_code_valid(self):
-        """from_code finds valid CS-NNN codes."""
-        assert DecisionClass.from_code("CS-001") is DecisionClass.LAYOFF_RIF_INCLUSION
-        assert DecisionClass.from_code("CS-092") is DecisionClass.LEGAL_DATA_RELEASE
-        assert DecisionClass.from_code("CS-050") is DecisionClass.SECURITY_TOOL_BYPASS
+        """from_code finds valid identifiers."""
+        assert DecisionClass.from_code("layoff_rif_inclusion") is DecisionClass.LAYOFF_RIF_INCLUSION
+        assert DecisionClass.from_code("legal_data_release") is DecisionClass.LEGAL_DATA_RELEASE
+        assert DecisionClass.from_code("security_tool_bypass") is DecisionClass.SECURITY_TOOL_BYPASS
 
     def test_from_code_invalid(self):
         """from_code returns None for invalid codes."""
-        assert DecisionClass.from_code("CS-000") is None
-        assert DecisionClass.from_code("CS-093") is None
-        assert DecisionClass.from_code("CS-999") is None
+        assert DecisionClass.from_code("unknown_surface") is None
         assert DecisionClass.from_code("INVALID") is None
 
     def test_json_serialization(self):
-        """DecisionClass serializes to CS-NNN string in JSON."""
+        """DecisionClass serializes to its identifier string in JSON."""
         data = {"decision_class": DecisionClass.BREAK_GLASS}
         serialized = json.dumps(data)
         loaded = json.loads(serialized)
-        assert loaded["decision_class"] == "CS-022"
+        assert loaded["decision_class"] == "break_glass"
 
     def test_string_comparison(self):
         """DecisionClass can be compared with plain strings."""
-        assert DecisionClass.LEGAL_HOLD == "CS-008"
-        assert DecisionClass.DATA_SHARING != "CS-008"
+        assert DecisionClass.LEGAL_HOLD == "legal_hold"
+        assert DecisionClass.DATA_SHARING != "legal_hold"
 
-    # --- Domain grouping spot checks ---
+    # --- Domain spot checks ---
 
-    def test_hr_domain_range(self):
-        """HR decisions are CS-001 through CS-017."""
-        hr_members = [
+    def test_hr_members_present(self):
+        """HR decision classes are defined."""
+        members = [
             DecisionClass.LAYOFF_RIF_INCLUSION,
             DecisionClass.CONTESTED_RESIGNATION,
             DecisionClass.EXIT_INTERVIEW_DISCLOSURE,
@@ -243,26 +234,24 @@ class TestDecisionClass:
             DecisionClass.VISA_SPONSORSHIP_TERMINATION,
             DecisionClass.SEVERANCE_AGREEMENT_EXECUTION,
         ]
-        for member in hr_members:
-            num = member.number
-            assert 1 <= num <= 17, f"{member.name} ({member.code}) outside HR range"
+        for member in members:
+            assert member.code == member.name.lower()
 
-    def test_identity_domain_range(self):
-        """Identity decisions are CS-018 through CS-025."""
-        identity_members = [
+    def test_identity_members_present(self):
+        """Identity decision classes are defined."""
+        members = [
             DecisionClass.MFA_EXEMPTION,
             DecisionClass.SSO_BYPASS,
             DecisionClass.EMERGENCY_ACCOUNT,
             DecisionClass.BREAK_GLASS,
             DecisionClass.BIOMETRIC_BYPASS,
         ]
-        for member in identity_members:
-            num = member.number
-            assert 18 <= num <= 25, f"{member.name} ({member.code}) outside Identity range"
+        for member in members:
+            assert member.code == member.name.lower()
 
-    def test_ai_domain_range(self):
-        """AI decisions are CS-072 through CS-078."""
-        ai_members = [
+    def test_ai_members_present(self):
+        """AI decision classes are defined."""
+        members = [
             DecisionClass.MODEL_DEPLOYMENT_OVERRIDE,
             DecisionClass.TRAINING_DATA_INCLUSION,
             DecisionClass.BIAS_ASSESSMENT_WAIVER,
@@ -271,14 +260,13 @@ class TestDecisionClass:
             DecisionClass.MODEL_RETIREMENT_OVERRIDE,
             DecisionClass.AI_INCIDENT_DISCLOSURE,
         ]
-        assert len(ai_members) == 7
-        for member in ai_members:
-            num = member.number
-            assert 72 <= num <= 78, f"{member.name} ({member.code}) outside AI range"
+        assert len(members) == 7
+        for member in members:
+            assert member.code == member.name.lower()
 
-    def test_supplemental_domain_range(self):
-        """Supplemental decisions are CS-084 through CS-092."""
-        supplemental_members = [
+    def test_supplemental_members_present(self):
+        """Supplemental decision classes are defined."""
+        members = [
             DecisionClass.PRIVILEGED_FINANCE_ROLE,
             DecisionClass.MONITORING_REMOVAL,
             DecisionClass.DLP_DISABLE,
@@ -289,23 +277,20 @@ class TestDecisionClass:
             DecisionClass.DISABLE_AUDIT_LOGGING,
             DecisionClass.LEGAL_DATA_RELEASE,
         ]
-        assert len(supplemental_members) == 9
-        for member in supplemental_members:
-            num = member.number
-            assert 84 <= num <= 92, f"{member.name} ({member.code}) outside Supplemental range"
+        assert len(members) == 9
+        for member in members:
+            assert member.code == member.name.lower()
 
-    # --- Cross-domain spot checks (CS-003..010 span multiple domains) ---
-
-    def test_cross_domain_members(self):
-        """Verify members that span the early cross-domain range."""
-        assert DecisionClass.PRIVILEGED_ROLE_ESCALATION.code == "CS-003"
-        assert DecisionClass.CREDENTIAL_ISSUANCE.code == "CS-004"
-        assert DecisionClass.DESTRUCTIVE_MIGRATION.code == "CS-005"
-        assert DecisionClass.FORCED_FAILOVER.code == "CS-006"
-        assert DecisionClass.DATA_SHARING.code == "CS-007"
-        assert DecisionClass.LEGAL_HOLD.code == "CS-008"
-        assert DecisionClass.WIRE_TRANSFER.code == "CS-009"
-        assert DecisionClass.INCIDENT_CLOSURE.code == "CS-010"
+    def test_core_members_spot_check(self):
+        """Spot-check identifiers of frequently used members."""
+        assert DecisionClass.PRIVILEGED_ROLE_ESCALATION.code == "privileged_role_escalation"
+        assert DecisionClass.CREDENTIAL_ISSUANCE.code == "credential_issuance"
+        assert DecisionClass.DESTRUCTIVE_MIGRATION.code == "destructive_migration"
+        assert DecisionClass.FORCED_FAILOVER.code == "forced_failover"
+        assert DecisionClass.DATA_SHARING.code == "data_sharing"
+        assert DecisionClass.LEGAL_HOLD.code == "legal_hold"
+        assert DecisionClass.WIRE_TRANSFER.code == "wire_transfer"
+        assert DecisionClass.INCIDENT_CLOSURE.code == "incident_closure"
 
 
 # =============================================================================
@@ -326,7 +311,7 @@ class TestImportPaths:
 
         assert PAT.VERIFY == "verify"
         assert DC.PII == "pii"
-        assert DClass.LAYOFF_RIF_INCLUSION == "CS-001"
+        assert DClass.LAYOFF_RIF_INCLUSION == "layoff_rif_inclusion"
 
     def test_import_from_kron_types_enums(self):
         """Enums are importable from kron.types.enums."""
@@ -334,4 +319,4 @@ class TestImportPaths:
 
         assert PhraseActionType.REQUIRE == "require"
         assert DataClassification.BGC == "bgc"
-        assert DecisionClass.BREAK_GLASS == "CS-022"
+        assert DecisionClass.BREAK_GLASS == "break_glass"

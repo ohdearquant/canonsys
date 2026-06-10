@@ -1,0 +1,143 @@
+charter "Model Retirement Override" v1.0
+
+schemas: canon.ai@2026.01
+
+packages:
+    - ai_governance
+    - authorization
+    - certification
+    - evidence
+    - policy
+
+policies:
+    - ai.model_retirement_override
+
+triggers:
+    model_submitted
+    review_completed
+    deployment_requested
+
+workflow model_retirement_override:
+    phase eligibility:
+        await model_submitted
+        require require_bias_assessment_documented()
+        require require_human_review_present()
+        action check_extension_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_human_review_present()
+        require verify_human_review_complete()
+        action submit_facts()
+        evidence facts_packet
+
+    phase risk_assessment:
+        require facts.passed
+        require require_bias_assessment_documented()
+        action submit_risk_assessment()
+        action verify_assessment_freshness()
+        evidence risk_assessment_report
+        certify hashable
+
+    phase validation:
+        require risk_assessment.passed
+        await review_completed
+        require verify_bias_assessment_complete()
+        action validate_model()
+        action run_accuracy_checks()
+        evidence validation_report
+
+    phase replacement_plan:
+        require validation.passed
+        require verify_approval_chain_complete()
+        action document_replacement_plan()
+        action verify_timeline_milestones()
+        evidence replacement_plan
+        certify hashable
+
+    phase monitoring:
+        require replacement_plan.passed
+        require verify_approval_chain_complete()
+        action configure_enhanced_monitoring()
+        action verify_drift_alerts()
+        evidence enhanced_monitoring_config
+
+    phase policy:
+        require monitoring.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        await deployment_requested
+        action emit_certificate()
+        certify immutable
+        evidence model_retirement_certificate
+
+situations:
+    when extension_reason == "UNKNOWN":
+        require require_human_review_present()
+
+    when extension_reason == "RESOURCE_CONSTRAINT":
+        require verify_executive_approval()
+        require verify_approval_chain_complete()
+
+    when known_vulnerabilities == "UNKNOWN":
+        require require_human_review_present()
+
+    when known_vulnerabilities == "CRITICAL":
+        require require_human_review_for_high_risk()
+
+    when known_vulnerabilities == "HIGH":
+        require require_bias_assessment_documented()
+
+    when drift_status == "UNKNOWN":
+        require require_human_review_present()
+
+    when drift_status == "SEVERE_DRIFT":
+        require require_human_review_for_high_risk()
+
+    when drift_status == "MODERATE_DRIFT":
+        require require_bias_assessment_documented()
+
+    when model_purpose == "HIRING_SCREENING":
+        require require_bias_assessment_documented()
+        require require_human_review_present()
+
+    when model_purpose == "CREDIT_SCORING":
+        require require_bias_assessment_documented()
+        require require_human_review_present()
+
+    when prior_extension_count_high == "YES":
+        require verify_executive_approval()
+
+    when extension_days_exceeds_max == "YES":
+        require require_human_review_for_high_risk()
+
+    when model_age_exceeds_max == "YES":
+        require require_human_review_for_high_risk()
+
+roles:
+    head_of_ai:
+        actions: [check_extension_eligibility, submit_facts, submit_risk_assessment, validate_model, document_replacement_plan, emit_certificate]
+        requires_mfa: true
+
+    ml_engineer:
+        actions: [verify_assessment_freshness, run_accuracy_checks, verify_timeline_milestones, verify_drift_alerts]
+        requires_mfa: true
+
+    sre:
+        actions: [configure_enhanced_monitoring]
+        requires_mfa: true
+
+    ciso:
+        actions: [submit_risk_assessment, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    vp_engineering:
+        actions: [document_replacement_plan, emit_certificate]
+        requires_mfa: true
+        break_glass: true

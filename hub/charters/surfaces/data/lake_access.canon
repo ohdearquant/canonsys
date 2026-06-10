@@ -1,0 +1,158 @@
+charter "Data Lake Access Grant" v2.0
+
+packages:
+    - data_protection
+    - consent
+    - scope
+    - evidence
+    - policy
+
+triggers:
+    lake_access_requested
+    training_verification_completed
+    access_granted
+
+workflow data_lake_access_grant:
+    phase access_request:
+        await lake_access_requested
+        require require_evidence_present("access_request")
+        require verify_scope_definition()
+        require verify_purpose_limitation()
+        action record_access_request()
+        evidence access_request_record
+
+    phase grantee_verification:
+        require access_request.passed
+        require verify_scope_manifest()
+        action verify_grantee_identity()
+        evidence grantee_verification_record
+
+    phase training_verification:
+        require grantee_verification.passed
+        await training_verification_completed
+        require require_evidence_present("training_record")
+        action verify_training_completion()
+        evidence training_record
+
+    phase manager_approval:
+        require training_verification.passed
+        require require_evidence_present("manager_approval")
+        action request_manager_approval()
+        evidence manager_approval_artifact
+
+    phase data_owner_approval:
+        require manager_approval.passed
+        require verify_stakeholder_notification_complete()
+        action request_data_owner_approval()
+        evidence owner_approval_artifact
+
+    phase pii_justification:
+        require data_owner_approval.passed
+        require verify_purpose_limitation()
+        action verify_pii_justification()
+        evidence pii_justification_doc
+
+    phase access_review:
+        require pii_justification.passed
+        require derive_risk_tier()
+        action check_access_review_status()
+        evidence access_review_log
+
+    phase evidence_binding:
+        require access_review.passed
+        require create_cep()
+        require seal_cep()
+        require verify_cep_sealed()
+        action bind_evidence_packet()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy_evaluation.passed
+        await access_granted
+        require verify_chain_of_custody_complete()
+        action certify_decision()
+        certify immutable
+        evidence lake_access_certificate
+
+situations:
+    when access_scope == "FULL_LAKE":
+        require require_limited_audience()
+
+    when grantee_type == "USER":
+        require verify_group_membership_snapshot()
+
+    when grantee_type == "SERVICE_ACCOUNT":
+        require derive_risk_tier()
+
+    when grantee_type == "GROUP":
+        require verify_group_membership_snapshot()
+
+    when training_status == "CURRENT":
+        require verify_scope_manifest()
+
+    when training_status == "EXPIRED":
+        require derive_risk_tier()
+
+    when training_status == "UNKNOWN":
+        require derive_risk_tier()
+
+    when dataset_classification == "RESTRICTED":
+        require require_limited_audience()
+
+    when dataset_classification == "CONFIDENTIAL":
+        require require_limited_audience()
+
+    when pii_datasets_present == "YES":
+        require require_pii_classification()
+        require verify_data_minimization()
+
+    when pii_datasets_present == "UNKNOWN":
+        require require_pii_classification()
+
+    when access_review_age_band == "STALE":
+        require derive_risk_tier()
+
+    when duration_type == "PERMANENT":
+        require derive_risk_tier()
+
+    when duration_band == "EXCESSIVE":
+        require require_limited_audience()
+
+roles:
+    data_analyst:
+        actions: [record_access_request, verify_grantee_identity]
+        requires_mfa: true
+
+    hr_manager:
+        actions: [verify_training_completion, request_manager_approval]
+        requires_mfa: true
+
+    data_owner:
+        actions: [request_data_owner_approval, verify_pii_justification]
+        requires_mfa: true
+
+    security_analyst:
+        actions: [check_access_review_status]
+        requires_mfa: true
+
+    dpo:
+        actions: [certify_decision, bind_evidence_packet]
+        requires_mfa: true
+        break_glass: true
+
+    ciso:
+        actions: [certify_decision]
+        requires_mfa: true
+        break_glass: true
+
+    head_of_data:
+        actions: [certify_decision]
+        requires_mfa: true
+        break_glass: true

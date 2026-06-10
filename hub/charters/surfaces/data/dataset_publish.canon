@@ -1,0 +1,138 @@
+charter "Dataset External Publish" v2.0
+
+packages:
+    - data_protection
+    - consent
+    - scope
+    - evidence
+    - policy
+
+triggers:
+    dataset_publish_requested
+    anonymization_verification_completed
+    dataset_published
+
+workflow dataset_external_publish:
+    phase publish_request:
+        await dataset_publish_requested
+        require require_evidence_present("publish_request")
+        require verify_scope_definition()
+        require verify_channel_allowed()
+        action record_publish_request()
+        evidence publish_request_record
+
+    phase pii_scan:
+        require publish_request.passed
+        require require_pii_classification()
+        action scan_for_pii()
+        evidence pii_scan_report
+
+    phase anonymization_verification:
+        require pii_scan.passed
+        await anonymization_verification_completed
+        require verify_data_minimization()
+        action verify_anonymization()
+        evidence anonymization_report
+        certify hashable
+
+    phase classification_attestation:
+        require anonymization_verification.passed
+        require verify_scope_manifest()
+        action request_classification_attestation()
+        evidence classification_attestation
+
+    phase audience_validation:
+        require classification_attestation.passed
+        require verify_destination_allowed()
+        require verify_channel_allowed()
+        evidence audience_validation_record
+
+    phase dpo_review:
+        require audience_validation.passed
+        require derive_risk_tier()
+        action request_dpo_review()
+        evidence dpo_approval_artifact
+
+    phase evidence_binding:
+        require dpo_review.passed
+        require create_cep()
+        require seal_cep()
+        require verify_cep_sealed()
+        action bind_evidence_packet()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy_evaluation.passed
+        await dataset_published
+        require verify_chain_of_custody_complete()
+        action certify_decision()
+        certify immutable
+        evidence dataset_publish_certificate
+
+situations:
+    when publication_channel == "PUBLIC_REPO":
+        require require_limited_audience()
+
+    when classification == "RESTRICTED":
+        require require_limited_audience()
+
+    when classification == "CONFIDENTIAL":
+        require require_limited_audience()
+
+    when pii_present == "YES":
+        require verify_data_minimization()
+
+    when pii_present == "UNKNOWN":
+        require require_pii_classification()
+
+    when anonymization_verified == "NO":
+        require verify_data_minimization()
+
+    when anonymization_verified == "UNKNOWN":
+        require derive_risk_tier()
+
+    when anonymization_report_age_band == "STALE":
+        require derive_risk_tier()
+
+    when audience_scope == "UNLIMITED":
+        require require_limited_audience()
+
+    when audience_scope == "RESEARCH_ONLY":
+        require require_internal_publication()
+
+    when risk_tier == "HIGH":
+        require require_limited_audience()
+
+    when risk_tier == "CRITICAL":
+        require require_encrypted_transmission()
+
+    when dataset_drift_detected == "YES":
+        require verify_dataset_snapshot_match()
+
+    when record_count_band == "HIGH":
+        require derive_risk_tier()
+
+roles:
+    data_steward:
+        actions: [record_publish_request, scan_for_pii]
+        requires_mfa: true
+
+    privacy_analyst:
+        actions: [verify_anonymization, request_classification_attestation]
+        requires_mfa: true
+
+    data_owner:
+        actions: [request_classification_attestation]
+        requires_mfa: true
+
+    dpo:
+        actions: [request_dpo_review, certify_decision, bind_evidence_packet]
+        requires_mfa: true
+        break_glass: true

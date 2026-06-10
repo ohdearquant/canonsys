@@ -2,8 +2,8 @@
 
 Tests anti-gaming pattern detection functions:
 - derive_cumulative_amount (base function)
-- derive_cumulative_reallocation_amount (CS-056)
-- derive_cumulative_exception_amount (CS-058)
+- derive_cumulative_reallocation_amount
+- derive_cumulative_exception_amount
 
 These implement "5 small = 1 material" detection.
 """
@@ -285,7 +285,7 @@ class TestDeriveCumulativeAmount:
 
 
 # =============================================================================
-# CS-056: Budget Reallocation Tracking
+# this surface: Budget Reallocation Tracking
 # =============================================================================
 
 
@@ -382,7 +382,7 @@ class TestDeriveCumulativeReallocationAmount:
 
     @pytest.mark.asyncio
     async def test_budget_shuffling_scenario(self, mock_ctx, mock_cumulative_result):
-        """Test CS-056: Many small reallocations circumvent material threshold."""
+        """Test this surface: Many small reallocations circumvent material threshold."""
         department_id = uuid4()
 
         with patch(
@@ -429,7 +429,7 @@ class TestDeriveCumulativeReallocationAmount:
 
 
 # =============================================================================
-# CS-058: Expense Exception Tracking
+# this surface: Expense Exception Tracking
 # =============================================================================
 
 
@@ -508,7 +508,7 @@ class TestDeriveCumulativeExceptionAmount:
 
     @pytest.mark.asyncio
     async def test_five_small_equals_one_material_scenario(self, mock_ctx, mock_cumulative_result):
-        """Test CS-058: 5 small exceptions = 1 material exception."""
+        """Test this surface: 5 small exceptions = 1 material exception."""
         manager_id = uuid4()
 
         with patch(

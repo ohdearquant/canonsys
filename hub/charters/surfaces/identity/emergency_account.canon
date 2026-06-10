@@ -1,0 +1,174 @@
+charter "Emergency Account Creation" v1.0
+
+# IDENTITY Domain - PERMISSION_GRANT Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: SOC 2 CC6.1, HIPAA, PCI-DSS
+
+packages:
+    - identity
+    - authorization
+    - certification
+    - core
+    - incident
+    - lifecycle
+    - pattern
+    - policy
+
+triggers:
+    requestor_requests_account
+    lifecycle_configured
+    security_approves
+    executive_sponsors
+    account_created
+    account_disabled
+    account_expired
+
+workflow emergency_account:
+    phase request_submission:
+        await requestor_requests_account
+        require require_requestor_authority_verified()
+        require require_decision_not_certified()
+        require require_justification_present()
+        require require_creation_reason_valid()
+        action submit_creation_request()
+        action validate_creation_reason()
+        when creation_reason == "INCIDENT":
+            require require_incident_verified()
+            require require_incident_declared()
+        evidence creation_request_record
+
+    phase lifecycle_configuration:
+        require request_submission.passed
+        await lifecycle_configured
+        action configure_auto_disable()
+        action verify_auto_disable_scheduled()
+        when provisioning_bypass_type == "BACKGROUND_CHECK":
+            require require_vendor_temp_account_type()
+        when provisioning_bypass_type == "UNKNOWN":
+            require require_bypass_type_clarification()
+        evidence lifecycle_config_record
+        certify hashable
+
+    phase security_approval:
+        require lifecycle_configuration.passed
+        await security_approves
+        action collect_security_approval()
+        when environment == "PROD":
+            require require_security_approved()
+            require require_prod_duration_limit()
+        evidence security_approval_record
+
+    phase executive_review:
+        require security_approval.passed
+        await executive_sponsors
+        action verify_executive_sponsor()
+        action query_account_history()
+        action derive_prior_action_count()
+        action check_renewal_abuse()
+        when initial_role == "ADMIN":
+            require require_executive_sponsor()
+            require require_dual_approval()
+        evidence executive_review_record
+        certify hashable
+
+    phase prior_account_check:
+        require executive_review.passed
+        action check_prior_emergency_status()
+        when prior_emergency_count_gt_zero == "true":
+            require require_disable_executed()
+            action verify_prior_account_disabled()
+        evidence prior_account_record
+
+    phase policy_evaluation:
+        require prior_account_check.passed
+        require require_duration_bounded()
+        require require_duration_positive()
+        require require_auto_disable_scheduled()
+        require require_renewal_abuse_not_detected()
+        require require_policy_pass("emergency_account")
+        action evaluate_account_policy()
+        evidence policy_evaluation_record
+
+    phase creation:
+        require policy_evaluation.passed
+        await account_created
+        action create_emergency_account()
+        action schedule_auto_disable()
+        action compute_permissions_hash()
+        evidence account_creation_record
+
+    phase monitoring:
+        require creation.passed
+        action trigger_recertification()
+        action derive_prior_action_count()
+        evidence monitoring_record
+
+    phase closure:
+        require monitoring.passed
+        when closure_type == "AUTO":
+            await account_expired
+            action verify_account_disabled()
+        when closure_type == "MANUAL":
+            await account_disabled
+            action verify_disable_complete()
+        action compute_facts_hash()
+        action compute_evidence_hash()
+        action mint_account_certificate()
+        certify immutable
+        evidence emergency_account_certificate
+
+situations:
+    when environment == "PROD":
+        require require_security_approved()
+        require require_prod_duration_limit()
+
+    when initial_role == "ADMIN":
+        require require_executive_sponsor()
+
+    when initial_role == "SUPERUSER":
+        require require_executive_sponsor()
+        require require_ciso_override()
+
+    when creation_reason == "INCIDENT":
+        require require_incident_verified()
+
+    when provisioning_bypass_type == "BACKGROUND_CHECK":
+        require require_vendor_temp_account_type()
+
+    when provisioning_bypass_type == "UNKNOWN":
+        require require_bypass_type_clarification()
+
+    when renewal_abuse_detected == "true":
+        require require_abuse_review_complete()
+
+    when prior_emergency_count_gt_zero == "true":
+        require require_disable_executed()
+
+roles:
+    requestor:
+        actions: [submit_creation_request, validate_creation_reason]
+        requires_mfa: true
+
+    it_admin:
+        actions: [configure_auto_disable, verify_auto_disable_scheduled, create_emergency_account, schedule_auto_disable]
+        requires_mfa: true
+
+    security_analyst:
+        actions: [collect_security_approval, query_account_history, check_renewal_abuse, derive_prior_action_count, check_prior_emergency_status]
+        requires_mfa: true
+
+    security_lead:
+        actions: [evaluate_account_policy, mint_account_certificate]
+        requires_mfa: true
+
+    executive_sponsor:
+        actions: [verify_executive_sponsor]
+        requires_mfa: true
+
+    ciso:
+        actions: [mint_account_certificate]
+        break_glass: true
+
+    cto:
+        actions: [mint_account_certificate]
+        break_glass: true

@@ -4,7 +4,7 @@ Provides cross-cutting type-safe enums that replace bare str fields:
 
     PhraseActionType: Classifies phrase action prefixes (verify_, require_, etc.)
     DataClassification: Data sensitivity levels for access control and redaction
-    DecisionClass: The 92 control surface decision classes (CS-001 through CS-092)
+    DecisionClass: Control surface decision classes
 
 These are definition-only types. Existing phrase code is NOT refactored to
 consume them yet -- that is a separate pass (Phase 2 gates).
@@ -193,324 +193,313 @@ class DataClassification(Enum):
 
 
 class DecisionClass(Enum):
-    """The 92 control surface decision classes.
+    """Control surface decision classes.
 
-    Each member maps a human-readable name to its CS-NNN identifier.
-    These correspond 1:1 to charter definitions in hub/charters/surfaces/.
+    Each member maps a human-readable name to a stable snake_case identifier.
+    These correspond to charter definitions in hub/charters/surfaces/.
 
-    Grouped by domain:
-        CS-001..017: HR
-        CS-018..025: Identity
-        CS-026..038: Infrastructure
-        CS-039..046: Data
-        CS-047..055: Security
-        CS-056..064: Finance
-        CS-065..071: Legal
-        CS-072..078: AI
-        CS-079..083: Corporate
-        CS-084..092: Supplemental
     """
 
-    # --- HR (CS-001 .. CS-017) ---
-    LAYOFF_RIF_INCLUSION = "CS-001"
+    # --- HR ---
+    LAYOFF_RIF_INCLUSION = "layoff_rif_inclusion"
     """Layoff / Reduction-In-Force inclusion decision."""
 
-    CONTESTED_RESIGNATION = "CS-002"
+    CONTESTED_RESIGNATION = "contested_resignation"
     """Contested resignation acceptance."""
 
-    PRIVILEGED_ROLE_ESCALATION = "CS-003"
+    PRIVILEGED_ROLE_ESCALATION = "privileged_role_escalation"
     """Privileged role escalation grant."""
 
-    CREDENTIAL_ISSUANCE = "CS-004"
+    CREDENTIAL_ISSUANCE = "credential_issuance"
     """Long-lived service credential issuance."""
 
-    DESTRUCTIVE_MIGRATION = "CS-005"
+    DESTRUCTIVE_MIGRATION = "destructive_migration"
     """Destructive schema migration execution."""
 
-    FORCED_FAILOVER = "CS-006"
+    FORCED_FAILOVER = "forced_failover"
     """Forced failover execution."""
 
-    DATA_SHARING = "CS-007"
+    DATA_SHARING = "data_sharing"
     """External sensitive data sharing."""
 
-    LEGAL_HOLD = "CS-008"
+    LEGAL_HOLD = "legal_hold"
     """Legal hold placement."""
 
-    WIRE_TRANSFER = "CS-009"
+    WIRE_TRANSFER = "wire_transfer"
     """Large wire transfer execution."""
 
-    INCIDENT_CLOSURE = "CS-010"
+    INCIDENT_CLOSURE = "incident_closure"
     """Security incident closure."""
 
-    EXIT_INTERVIEW_DISCLOSURE = "CS-011"
+    EXIT_INTERVIEW_DISCLOSURE = "exit_interview_disclosure"
     """Exit interview disclosure."""
 
-    REHIRE_ELIGIBILITY_OVERRIDE = "CS-012"
+    REHIRE_ELIGIBILITY_OVERRIDE = "rehire_eligibility_override"
     """Rehire eligibility override."""
 
-    PROMOTION_WITHOUT_POSTING = "CS-013"
+    PROMOTION_WITHOUT_POSTING = "promotion_without_posting"
     """Promotion without job posting."""
 
-    SALARY_BAND_EXCEPTION = "CS-014"
+    SALARY_BAND_EXCEPTION = "salary_band_exception"
     """Salary band exception."""
 
-    REMOTE_WORK_REVOCATION = "CS-015"
+    REMOTE_WORK_REVOCATION = "remote_work_revocation"
     """Remote work arrangement revocation."""
 
-    VISA_SPONSORSHIP_TERMINATION = "CS-016"
+    VISA_SPONSORSHIP_TERMINATION = "visa_sponsorship_termination"
     """Visa sponsorship termination."""
 
-    SEVERANCE_AGREEMENT_EXECUTION = "CS-017"
+    SEVERANCE_AGREEMENT_EXECUTION = "severance_agreement_execution"
     """Severance agreement execution."""
 
-    # --- Identity (CS-018 .. CS-025) ---
-    MFA_EXEMPTION = "CS-018"
+    # --- Identity ---
+    MFA_EXEMPTION = "mfa_exemption"
     """MFA exemption grant."""
 
-    SSO_BYPASS = "CS-019"
+    SSO_BYPASS = "sso_bypass"
     """SSO bypass approval."""
 
-    EMERGENCY_ACCOUNT = "CS-020"
+    EMERGENCY_ACCOUNT = "emergency_account"
     """Emergency account creation."""
 
-    SERVICE_ACCOUNT_PRIVILEGE = "CS-021"
+    SERVICE_ACCOUNT_PRIVILEGE = "service_account_privilege"
     """Service account privilege grant."""
 
-    BREAK_GLASS = "CS-022"
+    BREAK_GLASS = "break_glass"
     """Break-glass activation."""
 
-    CA_TRUST = "CS-023"
+    CA_TRUST = "ca_trust"
     """Certificate authority trust establishment."""
 
-    FEDERATION_LINK = "CS-024"
+    FEDERATION_LINK = "federation_link"
     """Identity federation link."""
 
-    BIOMETRIC_BYPASS = "CS-025"
+    BIOMETRIC_BYPASS = "biometric_bypass"
     """Biometric enrollment bypass."""
 
-    # --- Infrastructure (CS-026 .. CS-038) ---
-    PRODUCTION_DATABASE_ACCESS = "CS-026"
+    # --- Infrastructure ---
+    PRODUCTION_DATABASE_ACCESS = "production_database_access"
     """Production database access grant."""
 
-    FIREWALL_RULE_BYPASS = "CS-027"
+    FIREWALL_RULE_BYPASS = "firewall_rule_bypass"
     """Firewall rule bypass."""
 
-    LOAD_BALANCER_OVERRIDE = "CS-028"
+    LOAD_BALANCER_OVERRIDE = "load_balancer_override"
     """Load balancer configuration override."""
 
-    DNS_ZONE_DELEGATION = "CS-029"
+    DNS_ZONE_DELEGATION = "dns_zone_delegation"
     """DNS zone delegation."""
 
-    SSL_CERTIFICATE_REVOCATION = "CS-030"
+    SSL_CERTIFICATE_REVOCATION = "ssl_certificate_revocation"
     """SSL certificate revocation."""
 
-    CONTAINER_REGISTRY_PUSH = "CS-031"
+    CONTAINER_REGISTRY_PUSH = "container_registry_push"
     """Container registry push authorization."""
 
-    KUBERNETES_ADMISSION_BYPASS = "CS-032"
+    KUBERNETES_ADMISSION_BYPASS = "kubernetes_admission_bypass"
     """Kubernetes admission controller bypass."""
 
-    NETWORK_SEGMENTATION_OVERRIDE = "CS-033"
+    NETWORK_SEGMENTATION_OVERRIDE = "network_segmentation_override"
     """Network segmentation override."""
 
-    BACKUP_RETENTION_OVERRIDE = "CS-034"
+    BACKUP_RETENTION_OVERRIDE = "backup_retention_override"
     """Backup retention policy override."""
 
-    DISASTER_RECOVERY_TEST = "CS-035"
+    DISASTER_RECOVERY_TEST = "disaster_recovery_test"
     """Disaster recovery test execution."""
 
-    CAPACITY_OVERCOMMIT = "CS-036"
+    CAPACITY_OVERCOMMIT = "capacity_overcommit"
     """Capacity overcommit authorization."""
 
-    MAINTENANCE_WINDOW_OVERRIDE = "CS-037"
+    MAINTENANCE_WINDOW_OVERRIDE = "maintenance_window_override"
     """Maintenance window override."""
 
-    SLA_DEGRADATION_ACCEPTANCE = "CS-038"
+    SLA_DEGRADATION_ACCEPTANCE = "sla_degradation_acceptance"
     """SLA degradation acceptance."""
 
-    # --- Data (CS-039 .. CS-046) ---
-    PII_EXPORT = "CS-039"
+    # --- Data ---
+    PII_EXPORT = "pii_export"
     """PII export authorization."""
 
-    RETENTION_OVERRIDE = "CS-040"
+    RETENTION_OVERRIDE = "retention_override"
     """Data retention policy override."""
 
-    CROSS_BORDER_TRANSFER = "CS-041"
+    CROSS_BORDER_TRANSFER = "cross_border_transfer"
     """Cross-border data transfer."""
 
-    ANONYMIZATION_EXEMPTION = "CS-042"
+    ANONYMIZATION_EXEMPTION = "anonymization_exemption"
     """Anonymization exemption."""
 
-    CLASSIFICATION_DOWNGRADE = "CS-043"
+    CLASSIFICATION_DOWNGRADE = "classification_downgrade"
     """Data classification downgrade."""
 
-    SCHEMA_ROLLBACK = "CS-044"
+    SCHEMA_ROLLBACK = "schema_rollback"
     """Schema migration rollback."""
 
-    DATASET_PUBLISH = "CS-045"
+    DATASET_PUBLISH = "dataset_publish"
     """Dataset external publish."""
 
-    LAKE_ACCESS = "CS-046"
+    LAKE_ACCESS = "lake_access"
     """Data lake access grant."""
 
-    # --- Security (CS-047 .. CS-055) ---
-    VULNERABILITY_EXEMPTION = "CS-047"
+    # --- Security ---
+    VULNERABILITY_EXEMPTION = "vulnerability_exemption"
     """Vulnerability exemption."""
 
-    PATCH_DEFERRAL = "CS-048"
+    PATCH_DEFERRAL = "patch_deferral"
     """Patch deferral."""
 
-    PENETRATION_TEST_SCOPE = "CS-049"
+    PENETRATION_TEST_SCOPE = "penetration_test_scope"
     """Penetration test scope definition."""
 
-    SECURITY_TOOL_BYPASS = "CS-050"
+    SECURITY_TOOL_BYPASS = "security_tool_bypass"
     """Security tool bypass."""
 
-    THREAT_INTEL_DISCLOSURE = "CS-051"
+    THREAT_INTEL_DISCLOSURE = "threat_intel_disclosure"
     """Threat intelligence disclosure."""
 
-    FORENSIC_IMAGE_RELEASE = "CS-052"
+    FORENSIC_IMAGE_RELEASE = "forensic_image_release"
     """Forensic image release."""
 
-    INCIDENT_ESCALATION_OVERRIDE = "CS-053"
+    INCIDENT_ESCALATION_OVERRIDE = "incident_escalation_override"
     """Incident escalation override."""
 
-    SECURITY_EXCEPTION_GRANT = "CS-054"
+    SECURITY_EXCEPTION_GRANT = "security_exception_grant"
     """Security exception grant."""
 
-    RED_TEAM_ENGAGEMENT = "CS-055"
+    RED_TEAM_ENGAGEMENT = "red_team_engagement"
     """Red team engagement authorization."""
 
-    # --- Finance (CS-056 .. CS-064) ---
-    BUDGET_REALLOCATION = "CS-056"
+    # --- Finance ---
+    BUDGET_REALLOCATION = "budget_reallocation"
     """Budget reallocation authorization."""
 
-    VENDOR_PAYMENT_OVERRIDE = "CS-057"
+    VENDOR_PAYMENT_OVERRIDE = "vendor_payment_override"
     """Vendor payment override."""
 
-    EXPENSE_POLICY_EXCEPTION = "CS-058"
+    EXPENSE_POLICY_EXCEPTION = "expense_policy_exception"
     """Expense policy exception."""
 
-    REVENUE_RECOGNITION_OVERRIDE = "CS-059"
+    REVENUE_RECOGNITION_OVERRIDE = "revenue_recognition_override"
     """Revenue recognition override."""
 
-    INTERCOMPANY_TRANSFER = "CS-060"
+    INTERCOMPANY_TRANSFER = "intercompany_transfer"
     """Intercompany transfer authorization."""
 
-    TAX_JURISDICTION_CHANGE = "CS-061"
+    TAX_JURISDICTION_CHANGE = "tax_jurisdiction_change"
     """Tax jurisdiction change."""
 
-    FINANCIAL_AUDIT_WAIVER = "CS-062"
+    FINANCIAL_AUDIT_WAIVER = "financial_audit_waiver"
     """Financial audit waiver."""
 
-    CREDIT_LIMIT_OVERRIDE = "CS-063"
+    CREDIT_LIMIT_OVERRIDE = "credit_limit_override"
     """Credit limit override."""
 
-    TREASURY_POSITION_CHANGE = "CS-064"
+    TREASURY_POSITION_CHANGE = "treasury_position_change"
     """Treasury position change."""
 
-    # --- Legal (CS-065 .. CS-071) ---
-    LITIGATION_HOLD_RELEASE = "CS-065"
+    # --- Legal ---
+    LITIGATION_HOLD_RELEASE = "litigation_hold_release"
     """Litigation hold release."""
 
-    PRIVILEGE_WAIVER = "CS-066"
+    PRIVILEGE_WAIVER = "privilege_waiver"
     """Attorney-client privilege waiver."""
 
-    SETTLEMENT_AUTHORITY = "CS-067"
+    SETTLEMENT_AUTHORITY = "settlement_authority"
     """Settlement authority grant."""
 
-    REGULATORY_DISCLOSURE = "CS-068"
+    REGULATORY_DISCLOSURE = "regulatory_disclosure"
     """Regulatory disclosure."""
 
-    CONTRACT_AMENDMENT = "CS-069"
+    CONTRACT_AMENDMENT = "contract_amendment"
     """Contract amendment execution."""
 
-    IP_ASSIGNMENT = "CS-070"
+    IP_ASSIGNMENT = "ip_assignment"
     """Intellectual property assignment."""
 
-    INDEMNIFICATION_WAIVER = "CS-071"
+    INDEMNIFICATION_WAIVER = "indemnification_waiver"
     """Indemnification waiver."""
 
-    # --- AI (CS-072 .. CS-078) ---
-    MODEL_DEPLOYMENT_OVERRIDE = "CS-072"
+    # --- AI ---
+    MODEL_DEPLOYMENT_OVERRIDE = "model_deployment_override"
     """AI model deployment override."""
 
-    TRAINING_DATA_INCLUSION = "CS-073"
+    TRAINING_DATA_INCLUSION = "training_data_inclusion"
     """Training data inclusion decision."""
 
-    BIAS_ASSESSMENT_WAIVER = "CS-074"
+    BIAS_ASSESSMENT_WAIVER = "bias_assessment_waiver"
     """Bias assessment waiver."""
 
-    HUMAN_REVIEW_BYPASS = "CS-075"
+    HUMAN_REVIEW_BYPASS = "human_review_bypass"
     """Human review bypass for AI decisions."""
 
-    AGENT_AUTONOMY_GRANT = "CS-076"
+    AGENT_AUTONOMY_GRANT = "agent_autonomy_grant"
     """AI agent autonomy grant."""
 
-    MODEL_RETIREMENT_OVERRIDE = "CS-077"
+    MODEL_RETIREMENT_OVERRIDE = "model_retirement_override"
     """Model retirement override."""
 
-    AI_INCIDENT_DISCLOSURE = "CS-078"
+    AI_INCIDENT_DISCLOSURE = "ai_incident_disclosure"
     """AI incident disclosure."""
 
-    # --- Corporate (CS-079 .. CS-083) ---
-    DUE_DILIGENCE_ACCESS = "CS-079"
+    # --- Corporate ---
+    DUE_DILIGENCE_ACCESS = "due_diligence_access"
     """Due diligence access grant."""
 
-    INTEGRATION_SYSTEM_LINK = "CS-080"
+    INTEGRATION_SYSTEM_LINK = "integration_system_link"
     """Integration system link."""
 
-    CARVE_OUT_EXECUTION = "CS-081"
+    CARVE_OUT_EXECUTION = "carve_out_execution"
     """Carve-out execution."""
 
-    MATERIAL_CHANGE_DISCLOSURE = "CS-082"
+    MATERIAL_CHANGE_DISCLOSURE = "material_change_disclosure"
     """Material change disclosure."""
 
-    CLOSING_CONDITION_WAIVER = "CS-083"
+    CLOSING_CONDITION_WAIVER = "closing_condition_waiver"
     """Closing condition waiver."""
 
-    # --- Supplemental (CS-084 .. CS-092) ---
-    PRIVILEGED_FINANCE_ROLE = "CS-084"
+    # --- Supplemental ---
+    PRIVILEGED_FINANCE_ROLE = "privileged_finance_role"
     """Privileged finance role promotion."""
 
-    MONITORING_REMOVAL = "CS-085"
+    MONITORING_REMOVAL = "monitoring_removal"
     """Monitoring scope removal."""
 
-    DLP_DISABLE = "CS-086"
+    DLP_DISABLE = "dlp_disable"
     """Data loss prevention disable."""
 
-    EXPORT_PERMISSION = "CS-087"
+    EXPORT_PERMISSION = "export_permission"
     """Sensitive system export permission."""
 
-    ETHICS_CASE_CLOSURE = "CS-088"
+    ETHICS_CASE_CLOSURE = "ethics_case_closure"
     """Ethics case closure without action."""
 
-    REINSTATE_ACCESS = "CS-089"
+    REINSTATE_ACCESS = "reinstate_access"
     """Reinstate terminated access exception."""
 
-    EXPORT_CONTROL_OVERRIDE = "CS-090"
+    EXPORT_CONTROL_OVERRIDE = "export_control_override"
     """Export control restriction override."""
 
-    DISABLE_AUDIT_LOGGING = "CS-091"
+    DISABLE_AUDIT_LOGGING = "disable_audit_logging"
     """Disable audit logging for system."""
 
-    LEGAL_DATA_RELEASE = "CS-092"
+    LEGAL_DATA_RELEASE = "legal_data_release"
     """Release customer data under legal demand."""
 
     @classmethod
     def from_code(cls, code: str) -> DecisionClass | None:
-        """Look up a DecisionClass by its CS-NNN code.
+        """Look up a DecisionClass by its identifier.
 
         Args:
-            code: The decision class code (e.g., "CS-001").
+            code: The decision class identifier (e.g., "layoff_rif_inclusion").
 
         Returns:
             The matching DecisionClass, or None if not found.
 
         Examples:
-            >>> DecisionClass.from_code("CS-001")
-            <DecisionClass.LAYOFF_RIF_INCLUSION: 'CS-001'>
-            >>> DecisionClass.from_code("CS-999")
+            >>> DecisionClass.from_code("layoff_rif_inclusion")
+            <DecisionClass.LAYOFF_RIF_INCLUSION: 'layoff_rif_inclusion'>
+            >>> DecisionClass.from_code("unknown")
             >>> # None
         """
         try:
@@ -520,20 +509,11 @@ class DecisionClass(Enum):
 
     @property
     def code(self) -> str:
-        """Return the CS-NNN code (alias for .value).
+        """Return the decision class identifier (alias for .value).
 
         Examples:
             >>> DecisionClass.LAYOFF_RIF_INCLUSION.code
-            'CS-001'
+            'layoff_rif_inclusion'
         """
         return self.value
 
-    @property
-    def number(self) -> int:
-        """Return the numeric portion of the code.
-
-        Examples:
-            >>> DecisionClass.LAYOFF_RIF_INCLUSION.number
-            1
-        """
-        return int(self.value.split("-")[1])

@@ -26,7 +26,7 @@ class DeriveAmountBandSpecs(BaseModel):
     """Specs for derive amount band phrase.
 
     Compliance Context:
-        - Finance surfaces (CS-009, CS-056-064): Amount classification determines approval chain
+        - Finance surfaces: Amount classification determines approval chain
         - Anti-gaming: Amount band MUST be derived, never user-asserted
     """
 

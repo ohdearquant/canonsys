@@ -1,7 +1,7 @@
 """OFAC sanctions clearance verification.
 
 Verifies that an entity/transaction is not blocked by OFAC sanctions.
-Critical for CS-090 (Export Control Override) - CRIMINAL LIABILITY exposure.
+Critical for this surface (Export Control Override) - CRIMINAL LIABILITY exposure.
 
 Compliance Context:
     - OFAC (Office of Foreign Assets Control) administers US sanctions

@@ -4,7 +4,7 @@ version = "2026.01.0"
 description = "Timing gates, business day computation, notice delivery, waiting period management, SLA verification, and timing constraint queries."
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Ocean (HaiyangLi)", email = "ocean@canonsys.com" }]
+authors = [{ name = "Ocean (HaiyangLi)", email = "ocean@lionagi.ai" }]
 
 dependencies = [
     "canon",

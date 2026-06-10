@@ -6,7 +6,6 @@ Complete vertical slice:
 - Detects systematic posting requirement bypass
 
 Regulatory: Employment law - prevents systematic posting bypass abuse.
-Control: CS-013
 
 Compliance Context:
     - Employment law: Job posting requirements
@@ -61,7 +60,6 @@ async def derive_manager_bypass_count_12m(
     Three or more bypasses in 12 months triggers review escalation.
 
     Regulatory: Employment law - prevents systematic posting bypass abuse.
-    Control: CS-013
 
     Args:
         options: Options with manager_id, threshold (default: 3)

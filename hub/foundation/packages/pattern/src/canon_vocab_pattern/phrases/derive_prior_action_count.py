@@ -6,9 +6,9 @@ Complete vertical slice:
 - Returns count with window metadata
 
 Critical for:
-- Manager bypass pattern detection (CS-013, CS-014)
-- Credential renewal abuse (CS-018, CS-019)
-- Override frequency monitoring (CS-040, CS-057)
+- Manager bypass pattern detection
+- Credential renewal abuse
+- Override frequency monitoring
 
 Compliance Context:
     - SOX Section 302: Management assessment of internal controls

@@ -1,11 +1,11 @@
 """Tests for pattern detection wrappers.
 
 Tests surface-specific pattern detection functions:
-- derive_manager_bypass_count_12m (CS-013)
-- derive_manager_salary_exception_count_12m (CS-014)
-- check_prior_escalations (CS-003)
-- check_prior_exemptions (CS-018)
-- check_prior_bypasses (CS-019)
+- derive_manager_bypass_count_12m
+- derive_manager_salary_exception_count_12m
+- check_prior_escalations
+- check_prior_exemptions
+- check_prior_bypasses
 """
 
 from __future__ import annotations
@@ -70,7 +70,7 @@ def mock_count_result():
 
 
 # =============================================================================
-# CS-013: Manager Posting Bypass Tracking
+# this surface: Manager Posting Bypass Tracking
 # =============================================================================
 
 
@@ -220,7 +220,7 @@ class TestDeriveManagerBypassCount12m:
 
 
 # =============================================================================
-# CS-014: Manager Salary Exception Tracking
+# this surface: Manager Salary Exception Tracking
 # =============================================================================
 
 
@@ -329,7 +329,7 @@ class TestDeriveManagerSalaryExceptionCount12m:
 
 
 # =============================================================================
-# CS-003: Prior Privilege Escalation Tracking
+# this surface: Prior Privilege Escalation Tracking
 # =============================================================================
 
 
@@ -429,7 +429,7 @@ class TestCheckPriorEscalations:
 
 
 # =============================================================================
-# CS-018: Prior MFA Exemption Tracking
+# this surface: Prior MFA Exemption Tracking
 # =============================================================================
 
 
@@ -515,7 +515,7 @@ class TestCheckPriorExemptions:
 
 
 # =============================================================================
-# CS-019: Prior Application Bypass Tracking
+# this surface: Prior Application Bypass Tracking
 # =============================================================================
 
 

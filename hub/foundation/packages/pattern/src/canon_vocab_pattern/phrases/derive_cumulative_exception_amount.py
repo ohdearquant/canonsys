@@ -5,7 +5,7 @@ Complete vertical slice:
 - Tracks manager-level exception granting
 - Detects "5 small = 1 material" exception stacking
 
-CS-058: Detect exception stacking where a manager grants many
+this surface: Detect exception stacking where a manager grants many
 small exceptions that cumulatively exceed material thresholds.
 
 Compliance Context:
@@ -71,7 +71,7 @@ async def derive_cumulative_exception_amount(
 ) -> dict:
     """Track expense exception patterns for a manager.
 
-    CS-058: Detect exception stacking where a manager grants many
+    this surface: Detect exception stacking where a manager grants many
     small exceptions that cumulatively exceed material thresholds.
 
     Args:

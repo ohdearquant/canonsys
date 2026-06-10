@@ -1,0 +1,164 @@
+charter "Privileged Role Escalation" v1.0
+
+# IDENTITY Domain - PERMISSION_GRANT Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: SOC 2 CC6.1, NIST 800-53 AC-6, PCI-DSS
+
+packages:
+    - identity
+    - authorization
+    - certification
+    - core
+    - lifecycle
+    - pattern
+    - policy
+
+triggers:
+    requester_requests_escalation
+    manager_approves
+    resource_owner_attests
+    escalation_granted
+    escalation_expires
+    escalation_revoked
+
+workflow privileged_escalation:
+    phase request_submission:
+        await requester_requests_escalation
+        require require_subject_exists()
+        require require_target_role_valid()
+        require require_decision_not_certified()
+        require require_justification_present()
+        require require_resource_scope_declared()
+        action submit_escalation_request()
+        action validate_justification_code()
+        when justification_code == "INCIDENT":
+            require require_incident_ticket_present()
+        evidence access_request_record
+
+    phase manager_approval:
+        require request_submission.passed
+        await manager_approves
+        require require_manager_approved()
+        action collect_manager_approval()
+        evidence manager_approval_record
+
+    phase owner_verification:
+        require manager_approval.passed
+        await resource_owner_attests
+        action verify_resource_owner_identity()
+        when environment == "PROD":
+            require require_owner_identity_verified()
+        when resource_type == "VAULT":
+            require require_owner_identity_verified()
+        when resource_type == "DATABASE":
+            require require_owner_identity_verified()
+        evidence owner_approval_record
+        certify hashable
+
+    phase auth_posture_check:
+        require owner_verification.passed
+        require verify_strong_auth_posture()
+        action check_mfa_status()
+        action verify_managed_device()
+        when target_role == "ADMIN":
+            require require_strong_auth_verified()
+            require require_managed_device()
+        evidence auth_posture_record
+
+    phase abuse_detection:
+        require auth_posture_check.passed
+        action query_escalation_history()
+        action derive_prior_action_count()
+        action check_renewal_abuse()
+        when prior_escalations_30d > 5:
+            require require_abuse_review_complete()
+            action escalate_frequent_usage()
+        evidence escalation_history_record
+
+    phase policy_evaluation:
+        require abuse_detection.passed
+        require require_duration_bounded()
+        require require_temporal_bounds_valid()
+        require require_renewal_abuse_not_detected()
+        require require_policy_pass("privileged_escalation")
+        action evaluate_identity_policy()
+        when environment == "PROD":
+            require require_prod_duration_limit()
+        evidence policy_evaluation_record
+
+    phase grant:
+        require policy_evaluation.passed
+        await escalation_granted
+        action grant_escalated_role()
+        action schedule_auto_revoke()
+        evidence escalation_grant_record
+
+    phase monitoring:
+        require grant.passed
+        action trigger_recertification()
+        action derive_prior_action_count()
+        evidence monitoring_record
+
+    phase closure:
+        require monitoring.passed
+        when closure_type == "AUTO":
+            await escalation_expires
+            action verify_role_reverted()
+        when closure_type == "MANUAL":
+            await escalation_revoked
+            action verify_revocation_complete()
+        action compute_facts_hash()
+        action compute_evidence_hash()
+        action mint_escalation_certificate()
+        certify immutable
+        evidence privileged_escalation_certificate
+
+situations:
+    when environment == "PROD":
+        require require_owner_identity_verified()
+        require require_prod_duration_limit()
+
+    when resource_type == "VAULT":
+        require require_owner_identity_verified()
+
+    when resource_type == "DATABASE":
+        require require_owner_identity_verified()
+
+    when target_role == "ADMIN":
+        require require_strong_auth_verified()
+        require require_managed_device()
+
+    when target_role == "SUPERUSER":
+        require require_dual_approval()
+        require require_ciso_override()
+
+    when justification_code == "INCIDENT":
+        require require_incident_ticket_present()
+
+    when renewal_abuse_detected == "true":
+        require require_abuse_review_complete()
+
+roles:
+    requester:
+        actions: [submit_escalation_request, validate_justification_code]
+        requires_mfa: true
+
+    manager:
+        actions: [collect_manager_approval]
+        requires_mfa: true
+
+    resource_owner:
+        actions: [verify_resource_owner_identity]
+        requires_mfa: true
+
+    security_analyst:
+        actions: [check_mfa_status, verify_managed_device, query_escalation_history, check_renewal_abuse, derive_prior_action_count]
+        requires_mfa: true
+
+    security_lead:
+        actions: [evaluate_identity_policy, grant_escalated_role, schedule_auto_revoke, trigger_recertification, mint_escalation_certificate]
+        requires_mfa: true
+
+    ciso:
+        actions: [mint_escalation_certificate]
+        break_glass: true

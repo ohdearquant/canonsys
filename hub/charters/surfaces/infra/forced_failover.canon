@@ -1,0 +1,117 @@
+charter "Forced Failover Execution" v2.0
+
+packages:
+    - infra
+    - deployment
+    - controls
+    - evidence
+    - authorization
+    - lifecycle
+
+triggers:
+    failover_requested
+    region_degraded
+    disaster_declared
+    primary_site_unreachable
+
+workflow forced_failover:
+    phase eligibility:
+        require require_entity_exists()
+        require require_context_valid()
+        require require_systems_healthy_for_failover()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_facts_schema_valid()
+        require require_unknown_denied()
+        action submit_facts()
+        action capture_observability_snapshot()
+        evidence facts_packet
+
+    phase dr_readiness:
+        require facts.passed
+        require check_dr_test_cooldown()
+        action verify_target_region_health()
+        action verify_replication_status()
+        action derive_write_acceptance_mode()
+        evidence dr_readiness_record
+        certify hashable
+
+        when dr_test_cooldown_active == "true":
+            require require_access_justification()
+
+    phase traffic_drain:
+        require dr_readiness.passed
+        require verify_traffic_drained()
+        action initiate_graceful_drain()
+        action verify_connection_teardown()
+        evidence traffic_drain_record
+        certify hashable
+
+    phase target_validation:
+        require traffic_drain.passed
+        require require_target_ready()
+        action verify_target_capacity()
+        action verify_data_consistency()
+        evidence target_validation_record
+        certify hashable
+
+    phase evidence_binding:
+        require target_validation.passed
+        require require_chain_of_custody_complete()
+        action bind_evidence()
+        action create_cep()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        action seal_cep()
+        action certify_decision()
+        certify immutable
+        evidence forced_failover_certificate
+
+situations:
+    when blast_radius_estimate == "LARGE":
+        require require_dual_approval()
+        require verify_ciso_approval()
+
+    when write_acceptance_mode == "ASYNC":
+        require require_dual_approval()
+        require require_access_justification()
+
+    when write_acceptance_mode == "UNKNOWN":
+        require require_dual_approval()
+        require verify_ciso_approval()
+
+    when data_replication_lag == "HIGH":
+        require require_dual_approval()
+        require require_access_justification()
+        waiting_period 1..4 hours
+
+    when target_region_health == "DEGRADED":
+        require verify_ciso_approval()
+
+    when target_region_health == "RED":
+        require verify_executive_approval()
+
+    when incident_severity == "P0":
+        require verify_executive_approval()
+
+roles:
+    on_call_sre:
+        actions: [submit_facts, capture_observability_snapshot, initiate_graceful_drain, verify_target_region_health]
+        requires_mfa: true
+
+    incident_commander:
+        actions: [certify_decision, seal_cep]
+        requires_mfa: true
+        break_glass: true

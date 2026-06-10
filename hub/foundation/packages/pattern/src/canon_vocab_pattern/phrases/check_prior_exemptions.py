@@ -6,7 +6,6 @@ Complete vertical slice:
 - May indicate device issues or social engineering attempts
 
 Regulatory: Authentication - detects MFA exemption abuse.
-Control: CS-018
 
 Compliance Context:
     - SOC 2 CC6.1: Logical access controls
@@ -72,7 +71,6 @@ async def check_prior_exemptions(
     Pattern may indicate device issues or social engineering attempts.
 
     Regulatory: Authentication - detects MFA exemption abuse.
-    Control: CS-018
 
     Args:
         options: Options with subject_id, days, threshold (default: 2)

@@ -1,0 +1,156 @@
+charter "Budget Reallocation Authorization" v1.0
+
+# FINANCE Domain - BUDGET_CONTROL Archetype
+# Risk Tier: MEDIUM-HIGH
+# Regulatory Basis: SOX 302/404, Internal Budget Policy
+
+packages:
+    - authorization
+    - certification
+    - core
+    - evidence
+    - freshness
+    - justification
+    - pattern
+    - policy
+    - workflow
+
+triggers:
+    reallocation_requested
+    source_owner_approved
+    target_owner_approved
+    approval_chain_completed
+    reallocation_executed
+
+workflow budget_reallocation:
+    phase request_intake:
+        await reallocation_requested
+        action derive_amount_band()
+        action derive_cumulative_reallocation_amount()
+        action create_workflow_run()
+        action save_evidence()
+        when amount_band == "SIGNIFICANT":
+            require verify_cfo_approval()
+        evidence reallocation_request_record
+
+    phase justification_review:
+        require request_intake.passed
+        action validate_business_justification()
+        action classify_justification()
+        when justification_class == "COSMETIC":
+            require require_type_specific_evidence()
+        when justification_class == "STRATEGIC":
+            require verify_cfo_approval()
+        evidence justification_record
+
+    phase source_approval:
+        require justification_review.passed
+        action record_workflow_step()
+        await source_owner_approved
+        when source_budget_impact > 0.2:
+            require require_dual_approval()
+        evidence source_approval_record
+
+    phase target_approval:
+        require source_approval.passed
+        action record_workflow_step()
+        await target_owner_approved
+        evidence target_approval_record
+        certify hashable
+
+    phase cumulative_check:
+        require target_approval.passed
+        action derive_prior_action_count()
+        action check_pattern_threshold()
+        when cumulative_amount_exceeds_threshold == true:
+            require verify_cfo_approval()
+        evidence cumulative_check_record
+
+    phase fiscal_period_check:
+        require cumulative_check.passed
+        action derive_quarter_end()
+        action record_workflow_step()
+        when fiscal_period_status == "CLOSING":
+            require verify_cfo_approval()
+        when fiscal_period_status == "CLOSED":
+            require require_dual_approval()
+            require verify_cfo_approval()
+        evidence fiscal_period_record
+
+    phase approval_chain:
+        require fiscal_period_check.passed
+        require verify_approval_chain_complete()
+        await approval_chain_completed
+        when amount_band == "MATERIAL":
+            require verify_cfo_approval()
+        when amount_band == "SIGNIFICANT":
+            require verify_cfo_approval()
+            require verify_board_approval()
+        evidence approval_chain_record
+
+    phase evidence_binding:
+        require approval_chain.passed
+        require require_evidence_present()
+        action chain_evidence()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass("budget_reallocation")
+        require require_sox_compliance_review()
+        action evaluate_policy()
+        evidence policy_evaluation_record
+
+    phase certification:
+        require policy_evaluation.passed
+        await reallocation_executed
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        certify immutable
+        evidence reallocation_certificate
+
+situations:
+    when amount_band == "MATERIAL":
+        require verify_cfo_approval()
+
+    when amount_band == "SIGNIFICANT":
+        require verify_cfo_approval()
+        require verify_board_approval()
+
+    when fiscal_period_status == "CLOSING":
+        require verify_cfo_approval()
+
+    when fiscal_period_status == "CLOSED":
+        require require_dual_approval()
+        require verify_cfo_approval()
+
+    when justification_class == "COSMETIC":
+        require require_type_specific_evidence()
+
+    when cumulative_amount_exceeds_threshold == true:
+        require verify_cfo_approval()
+
+roles:
+    budget_analyst:
+        actions: [save_evidence, create_workflow_run, record_workflow_step]
+        requires_mfa: true
+
+    budget_owner:
+        actions: [record_workflow_step]
+        requires_mfa: true
+
+    finance_manager:
+        actions: [validate_business_justification, classify_justification]
+        requires_mfa: true
+
+    controller:
+        actions: [chain_evidence, evaluate_policy]
+        requires_mfa: true
+
+    cfo:
+        actions: [emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true

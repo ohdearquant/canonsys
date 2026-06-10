@@ -6,7 +6,6 @@ Complete vertical slice:
 - Indicates access control abuse or improper permission assignment
 
 Regulatory: Access control - detects privilege renewal abuse.
-Control: CS-003
 
 Compliance Context:
     - SOC 2 CC6.1: Logical access controls
@@ -73,7 +72,6 @@ async def check_prior_escalations(
     improper permanent permission assignment.
 
     Regulatory: Access control - detects privilege renewal abuse.
-    Control: CS-003
 
     Args:
         options: Options with subject_id, days, threshold (default: 2)

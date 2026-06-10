@@ -6,9 +6,9 @@ Complete vertical slice:
 - Returns total with threshold comparison
 
 Critical for:
-- Budget reallocation abuse detection (CS-056)
-- Expense exception stacking (CS-058)
-- Override amount aggregation (CS-057)
+- Budget reallocation abuse detection
+- Expense exception stacking
+- Override amount aggregation
 - Transfer limit circumvention (AML)
 
 Compliance Context:

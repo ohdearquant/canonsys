@@ -40,7 +40,7 @@ Usage:
 
     # Bind surfaces and activate
     await bind_surface(
-        {"charter_id": result["charter_id"], "surface_id": "CS-001", "policy_version": "sha256:..."},
+        {"charter_id": result["charter_id"], "surface_id": "this surface", "policy_version": "sha256:..."},
         ctx,
     )
     await activate_charter({"charter_id": result["charter_id"]}, ctx)
@@ -49,7 +49,7 @@ Usage:
     decision = await evaluate_decision(
         {
             "charter_id": result["charter_id"],
-            "surface_id": "CS-001",
+            "surface_id": "this surface",
             "facts": {"consent.verified": True},
         },
         ctx,

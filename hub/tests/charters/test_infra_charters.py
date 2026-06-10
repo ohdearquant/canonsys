@@ -85,7 +85,7 @@ class TestInfraSpecificPatterns:
 
     def test_destructive_migration_has_backup_verification(self):
         """Destructive migration charter should have backup verification."""
-        source = (INFRA_DIR / "cs_005_destructive_migration.canon").read_text()
+        source = (INFRA_DIR / "destructive_migration.canon").read_text()
 
         assert "verify_backup_complete()" in source
         assert "require_backup_verified()" in source
@@ -93,7 +93,7 @@ class TestInfraSpecificPatterns:
 
     def test_forced_failover_has_traffic_drain(self):
         """Forced failover charter should have traffic drain verification."""
-        source = (INFRA_DIR / "cs_006_forced_failover.canon").read_text()
+        source = (INFRA_DIR / "forced_failover.canon").read_text()
 
         assert "verify_traffic_drained()" in source
         assert "check_dr_test_cooldown()" in source
@@ -101,7 +101,7 @@ class TestInfraSpecificPatterns:
 
     def test_production_database_access_has_lifecycle_controls(self):
         """Production database access should have lifecycle controls."""
-        source = (INFRA_DIR / "cs_026_production_database_access.canon").read_text()
+        source = (INFRA_DIR / "production_database_access.canon").read_text()
 
         assert "schedule_auto_revert()" in source
         assert "enforce_expiry()" in source
@@ -109,7 +109,7 @@ class TestInfraSpecificPatterns:
 
     def test_firewall_bypass_has_auto_expire(self):
         """Firewall bypass should have auto-expire lifecycle."""
-        source = (INFRA_DIR / "cs_027_firewall_rule_bypass.canon").read_text()
+        source = (INFRA_DIR / "firewall_rule_bypass.canon").read_text()
 
         assert "schedule_auto_revert()" in source
         assert "verify_rule_expired()" in source
@@ -117,14 +117,14 @@ class TestInfraSpecificPatterns:
 
     def test_dr_test_has_cooldown_check(self):
         """DR test charter should have cooldown check."""
-        source = (INFRA_DIR / "cs_035_disaster_recovery_test.canon").read_text()
+        source = (INFRA_DIR / "disaster_recovery_test.canon").read_text()
 
         assert "check_dr_test_cooldown()" in source
         assert "verify_rollback_plan_present()" in source
 
     def test_load_balancer_override_has_traffic_drain(self):
         """Load balancer override should have traffic drain."""
-        source = (INFRA_DIR / "cs_028_load_balancer_override.canon").read_text()
+        source = (INFRA_DIR / "load_balancer_override.canon").read_text()
 
         assert "verify_traffic_drained()" in source
         assert "verify_connection_teardown()" in source

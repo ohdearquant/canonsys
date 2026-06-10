@@ -4,7 +4,7 @@ version = "2026.1.0"
 description = "Schema catalogs for Canon Charter DSL - versioned type registries for HR and base compliance schemas."
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Ocean (HaiyangLi)", email = "ocean@canonsys.com" }]
+authors = [{ name = "Ocean (HaiyangLi)", email = "ocean@lionagi.ai" }]
 
 dependencies = [
     "canon",

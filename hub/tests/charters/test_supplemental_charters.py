@@ -25,15 +25,15 @@ SUPPLEMENTAL_CHARTERS_DIR = (
 # -----------------------------------------------------------------
 
 SUPPLEMENTAL_CHARTER_FILES = [
-    "cs_084_privileged_finance_role.canon",
-    "cs_085_monitoring_removal.canon",
-    "cs_086_dlp_disable.canon",
-    "cs_087_export_permission.canon",
-    "cs_088_ethics_case_closure.canon",
-    "cs_089_reinstate_access.canon",
-    "cs_090_export_control_override.canon",
-    "cs_091_disable_audit_logging.canon",
-    "cs_092_legal_data_release.canon",
+    "privileged_finance_role.canon",
+    "monitoring_removal.canon",
+    "dlp_disable.canon",
+    "export_permission.canon",
+    "ethics_case_closure.canon",
+    "reinstate_access.canon",
+    "export_control_override.canon",
+    "disable_audit_logging.canon",
+    "legal_data_release.canon",
 ]
 
 
@@ -151,28 +151,28 @@ class TestSupplementalCharterSpecifics:
     """Tests for specific Supplemental charter requirements."""
 
     def test_export_permission_uses_ofac(self):
-        """CS-087 should use verify_ofac_clearance."""
-        source = (SUPPLEMENTAL_CHARTERS_DIR / "cs_087_export_permission.canon").read_text()
+        """Charter should use verify_ofac_clearance."""
+        source = (SUPPLEMENTAL_CHARTERS_DIR / "export_permission.canon").read_text()
         assert "verify_ofac_clearance" in source
 
     def test_export_control_override_uses_ofac(self):
-        """CS-090 should use verify_ofac_clearance."""
-        source = (SUPPLEMENTAL_CHARTERS_DIR / "cs_090_export_control_override.canon").read_text()
+        """Charter should use verify_ofac_clearance."""
+        source = (SUPPLEMENTAL_CHARTERS_DIR / "export_control_override.canon").read_text()
         assert "verify_ofac_clearance" in source
 
     def test_finance_role_uses_control_coverage(self):
-        """CS-084 should use assess_control_coverage."""
-        source = (SUPPLEMENTAL_CHARTERS_DIR / "cs_084_privileged_finance_role.canon").read_text()
+        """Charter should use assess_control_coverage."""
+        source = (SUPPLEMENTAL_CHARTERS_DIR / "privileged_finance_role.canon").read_text()
         assert "assess_control_coverage" in source
 
     def test_monitoring_removal_uses_control_coverage(self):
-        """CS-085 should use assess_control_coverage."""
-        source = (SUPPLEMENTAL_CHARTERS_DIR / "cs_085_monitoring_removal.canon").read_text()
+        """Charter should use assess_control_coverage."""
+        source = (SUPPLEMENTAL_CHARTERS_DIR / "monitoring_removal.canon").read_text()
         assert "assess_control_coverage" in source
 
     def test_dlp_disable_uses_control_coverage(self):
-        """CS-086 should use assess_control_coverage."""
-        source = (SUPPLEMENTAL_CHARTERS_DIR / "cs_086_dlp_disable.canon").read_text()
+        """Charter should use assess_control_coverage."""
+        source = (SUPPLEMENTAL_CHARTERS_DIR / "dlp_disable.canon").read_text()
         assert "assess_control_coverage" in source
 
 

@@ -8,11 +8,11 @@ This module provides the complete pattern detection domain implementation:
 
 Enables detection of repeated actions within a lookback window.
 Critical for:
-- Manager bypass pattern detection (CS-013, CS-014)
-- Credential renewal abuse (CS-018, CS-019)
-- Override frequency monitoring (CS-040, CS-057)
-- Budget reallocation abuse (CS-056)
-- Expense exception stacking (CS-058)
+- Manager bypass pattern detection
+- Credential renewal abuse
+- Override frequency monitoring
+- Budget reallocation abuse
+- Expense exception stacking
 
 Compliance Context:
     - "Five small exceptions = one material" detection

@@ -6,13 +6,13 @@ Pattern detection for compliance monitoring:
 - derive_cumulative_amount: Sum amounts over period for anti-gaming detection
 
 Surface-specific wrappers:
-- derive_manager_bypass_count_12m: CS-013 manager posting bypass tracking
-- derive_manager_salary_exception_count_12m: CS-014 salary exception tracking
-- check_prior_escalations: CS-003 privilege escalation tracking
-- check_prior_exemptions: CS-018 MFA exemption tracking
-- check_prior_bypasses: CS-019 application bypass tracking
-- derive_cumulative_reallocation_amount: CS-056 budget reallocation patterns
-- derive_cumulative_exception_amount: CS-058 expense exception patterns
+- derive_manager_bypass_count_12m: this surface manager posting bypass tracking
+- derive_manager_salary_exception_count_12m: this surface salary exception tracking
+- check_prior_escalations: this surface privilege escalation tracking
+- check_prior_exemptions: this surface MFA exemption tracking
+- check_prior_bypasses: this surface application bypass tracking
+- derive_cumulative_reallocation_amount: this surface budget reallocation patterns
+- derive_cumulative_exception_amount: this surface expense exception patterns
 
 Gate:
 - require_no_adverse_pattern: Enforce pattern threshold limits
