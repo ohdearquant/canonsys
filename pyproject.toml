@@ -1,0 +1,23 @@
+[project]
+name = "canonsys-workspace"
+version = "0.0.0"
+description = "CanonSys — agent governance framework (policy DSL + runtime enforcement)"
+requires-python = ">=3.11"
+
+[tool.uv.workspace]
+members = [
+    "libs/*",
+]
+
+[tool.uv.sources]
+kron = { workspace = true }
+canon = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "canon",
+    "kron",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.15.0",
+]

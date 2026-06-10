@@ -1,0 +1,21 @@
+[project]
+name = "kron"
+version = "0.1.0"
+description = "Type system, phrase infrastructure, and DAG execution engine for CanonSys"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Ocean (HaiyangLi)", email = "ocean@lionagi.ai" }]
+
+dependencies = [
+    "anyio>=4.0.0",
+    "orjson>=3.9.0",
+    "pydantic>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kron"]
+artifacts = ["src/kron/py.typed"]
