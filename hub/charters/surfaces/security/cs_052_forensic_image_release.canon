@@ -1,0 +1,181 @@
+charter "Forensic Image Release" v1.0
+
+# CS-052 - SECURITY Domain - EVIDENCE_RELEASE Archetype
+# Risk Tier: CRITICAL
+# Regulatory Basis: FRE 901, ISO 27037, NIST SP 800-86, eDiscovery Rules
+
+packages:
+    - evidence
+    - certification
+    - authorization
+    - legal
+    - investigation
+    - policy
+    - data_protection
+    - workflow
+    - timing
+
+triggers:
+    release_requested
+    integrity_verified
+    content_reviewed
+    privilege_reviewed
+    recipient_verified
+    scope_minimized
+    legal_approves
+    gc_approves
+    executive_approves
+    image_released
+
+workflow forensic_image_release:
+    phase release_request:
+        await release_requested
+        require require_chain_of_custody_complete()
+        action create_workflow_run()
+        action save_evidence()
+        when recipient_type == "LAW_ENFORCEMENT":
+            require verify_gc_approval()
+        when recipient_type == "OPPOSING_COUNSEL":
+            require verify_gc_approval()
+        evidence release_request_record
+
+    phase integrity_verification:
+        require release_request.passed
+        await integrity_verified
+        action verify_chain()
+        action verify_case_integrity()
+        action chain_evidence()
+        evidence integrity_verification_record
+        certify hashable
+
+    phase content_review:
+        require integrity_verification.passed
+        await content_reviewed
+        action get_case_evidence()
+        action record_workflow_step()
+        when contains_pii == "YES":
+            require require_dual_approval()
+            require require_pii_classification()
+        when contains_trade_secrets == "YES":
+            require verify_executive_approval()
+        evidence content_review_record
+
+    phase privilege_review:
+        require content_review.passed
+        await privilege_reviewed
+        require require_scope_locked()
+        action verify_privileged_review_complete()
+        action record_attestation()
+        when contains_privileged == "YES":
+            require verify_gc_approval()
+        evidence privilege_review_record
+        certify hashable
+
+    phase recipient_vetting:
+        require privilege_review.passed
+        await recipient_verified
+        action verify_approval_chain_complete()
+        when recipient_authorization == "VOLUNTARY":
+            require require_access_justification()
+        when recipient_authorization == "SUBPOENA":
+            require verify_gc_approval()
+        evidence recipient_vetting_record
+
+    phase scope_minimization:
+        require recipient_vetting.passed
+        await scope_minimized
+        action verify_data_minimization()
+        action chain_evidence()
+        action record_attestation()
+        when active_litigation_related == "YES":
+            require verify_gc_approval()
+        evidence scope_minimization_record
+        certify hashable
+
+    phase legal_approval:
+        require scope_minimization.passed
+        await legal_approves
+        require verify_gc_approval()
+        require require_legal_review_complete()
+        action chain_evidence()
+        evidence legal_approval_record
+
+    phase gc_approval:
+        require legal_approval.passed
+        await gc_approves
+        require verify_gc_approval()
+        action verify_approval_chain_complete()
+        evidence gc_approval_record
+
+    phase executive_approval:
+        require gc_approval.passed
+        await executive_approves
+        require verify_executive_approval()
+        when contains_trade_secrets == "YES":
+            require verify_board_approval()
+        evidence executive_approval_record
+
+    phase release_execution:
+        require executive_approval.passed
+        await image_released
+        action evaluate_policy()
+        action get_case_history()
+        action record_attestation()
+        evidence release_execution_record
+
+    phase certification:
+        require release_execution.passed
+        action verify_case_integrity()
+        action emit_certificate()
+        action complete_workflow_run()
+        certify immutable
+        evidence forensic_release_certificate
+
+situations:
+    when contains_privileged == "YES":
+        require verify_gc_approval()
+
+    when contains_pii == "YES":
+        require require_dual_approval()
+
+    when contains_trade_secrets == "YES":
+        require verify_executive_approval()
+
+    when recipient_type == "OPPOSING_COUNSEL":
+        require verify_gc_approval()
+
+    when recipient_type == "LAW_ENFORCEMENT":
+        require verify_gc_approval()
+
+    when active_litigation_related == "YES":
+        require verify_gc_approval()
+
+    when recipient_authorization == "VOLUNTARY":
+        require require_access_justification()
+
+roles:
+    forensics_analyst:
+        actions: [save_evidence, chain_evidence, verify_chain, verify_case_integrity, get_case_evidence]
+        requires_mfa: true
+
+    forensics_lead:
+        actions: [verify_data_minimization, verify_privileged_review_complete, record_attestation, record_workflow_step]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [verify_approval_chain_complete]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [verify_approval_chain_complete]
+        requires_mfa: true
+        break_glass: true
+
+    ciso:
+        actions: [emit_certificate, complete_workflow_run]
+        requires_mfa: true
+        break_glass: true
+
+    executive:
+        actions: [verify_approval_chain_complete]
+        requires_mfa: true

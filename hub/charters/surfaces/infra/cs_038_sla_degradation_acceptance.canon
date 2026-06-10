@@ -1,0 +1,184 @@
+charter "CS-038 SLA Degradation Acceptance" v2.0
+
+packages:
+    - infra
+    - deployment
+    - controls
+    - evidence
+    - authorization
+    - lifecycle
+
+triggers:
+    sla_degradation_proposed
+    service_tier_downgrade_requested
+    capacity_constraint_impact
+    cost_reduction_initiative
+
+workflow sla_degradation_acceptance:
+    phase eligibility:
+        require require_entity_exists()
+        require require_context_valid()
+        require require_service_sla_defined()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_facts_schema_valid()
+        require require_unknown_denied()
+        action submit_facts()
+        action identify_affected_services()
+        evidence facts_packet
+
+    phase impact_assessment:
+        require facts.passed
+        require require_customer_count_known()
+        action calculate_affected_customers()
+        action calculate_credit_impact()
+        action derive_degraded_hours_last_30d()
+        evidence impact_assessment_record
+        certify hashable
+
+    phase customer_notification:
+        require impact_assessment.passed
+        require require_notification_plan()
+        action prepare_customer_notification()
+        action verify_notification_delivery()
+        evidence customer_notification_record
+        certify hashable
+
+        when affected_customers == "HIGH":
+            require verify_cfo_approval()
+
+    phase credit_processing:
+        require customer_notification.passed
+        require require_credit_status_known()
+        action calculate_sla_credits()
+        action verify_credit_calculations()
+        evidence credit_processing_record
+        certify hashable
+
+    phase legal_review:
+        require credit_processing.passed
+        require verify_gc_approval()
+        action verify_contract_implications()
+        action assess_liability_exposure()
+        evidence legal_review_record
+        certify hashable
+
+    phase executive_briefing:
+        require legal_review.passed
+        require verify_executive_approval()
+        action brief_executives()
+        action document_executive_awareness()
+        evidence executive_briefing_record
+        certify hashable
+
+    phase evidence_binding:
+        require executive_briefing.passed
+        require require_chain_of_custody_complete()
+        action bind_evidence()
+        action create_cep()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        action seal_cep()
+        action certify_decision()
+        certify immutable
+        evidence sla_degradation_certificate
+
+    phase lifecycle_setup:
+        require certification.passed
+        action schedule_midpoint_review()
+        action trigger_recertification()
+        evidence lifecycle_record
+
+situations:
+    when proposed_sla_tier == "UNAVAILABLE":
+        require require_dual_approval()
+        require verify_ciso_approval()
+        require verify_executive_approval()
+        waiting_period 72..168 hours
+
+    when affected_customers == "HIGH":
+        require require_dual_approval()
+        require verify_cfo_approval()
+        require verify_executive_approval()
+
+    when degradation_reason == "COST_OPTIMIZATION":
+        require require_dual_approval()
+        require verify_cfo_approval()
+
+    when degradation_reason == "OTHER":
+        require require_dual_approval()
+        require require_access_justification()
+
+    when current_sla_tier == "PLATINUM":
+        require require_dual_approval()
+        require verify_executive_approval()
+        waiting_period 48..168 hours
+
+    when current_sla_tier == "GOLD":
+        require require_dual_approval()
+        require verify_cfo_approval()
+
+    when degradation_severity == "CRITICAL":
+        require require_dual_approval()
+        require verify_ciso_approval()
+        require verify_cfo_approval()
+        require verify_executive_approval()
+
+    when degradation_severity == "SEVERE":
+        require require_dual_approval()
+        require verify_gc_approval()
+        require verify_cfo_approval()
+
+    when credit_liability == "HIGH":
+        require verify_cfo_approval()
+
+    when legal_review_status == "PENDING":
+        require verify_gc_approval()
+
+    when legal_review_status == "UNKNOWN":
+        require require_dual_approval()
+        require verify_gc_approval()
+
+    when notification_status == "PENDING":
+        require require_notification_complete()
+
+    when notification_status == "UNKNOWN":
+        require require_dual_approval()
+
+roles:
+    engineer:
+        actions: [submit_facts, identify_affected_services, calculate_affected_customers]
+        requires_mfa: true
+
+    vp_engineering:
+        actions: [calculate_credit_impact, prepare_customer_notification, verify_notification_delivery]
+        requires_mfa: true
+
+    finance_lead:
+        actions: [calculate_sla_credits, verify_credit_calculations]
+        requires_mfa: true
+
+    gc:
+        actions: [verify_contract_implications, assess_liability_exposure]
+        requires_mfa: true
+
+    cfo:
+        actions: [certify_decision]
+        requires_mfa: true
+
+    cxo:
+        actions: [brief_executives, document_executive_awareness, seal_cep]
+        requires_mfa: true
+        break_glass: true

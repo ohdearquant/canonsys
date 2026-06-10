@@ -1,0 +1,195 @@
+charter "Regulatory Disclosure" v1.0
+
+packages:
+    - legal
+    - authorization
+    - certification
+    - evidence
+    - policy
+    - workflow
+    - data_protection
+
+triggers:
+    disclosure_requested
+    scope_defined
+    privilege_review_completed
+    pii_review_completed
+    gc_authorized
+    disclosure_transmitted
+
+workflow regulatory_disclosure:
+    phase initiation:
+        await disclosure_requested
+        require require_legal_review_complete()
+        require verify_gc_approval()
+        action create_workflow_run()
+        action lock_criteria()
+        when voluntary_status == "VOLUNTARY":
+            require verify_board_approval()
+            action document_voluntary_rationale()
+        when voluntary_status == "COMPELLED":
+            action verify_compulsion_basis()
+        evidence disclosure_initiation_record
+
+    phase scope_definition:
+        require initiation.passed
+        await scope_defined
+        action define_disclosure_scope()
+        action record_workflow_step()
+        when disclosure_scope == "NARROW":
+            action document_scope_limitations()
+        when disclosure_scope == "MODERATE":
+            require verify_gc_approval()
+            action document_scope_boundaries()
+        when disclosure_scope == "BROAD":
+            require verify_executive_approval()
+            require verify_gc_approval()
+            action document_broad_scope_justification()
+        when disclosure_scope == "COMPREHENSIVE":
+            require verify_board_approval()
+            require verify_executive_approval()
+            action document_comprehensive_disclosure()
+        evidence scope_definition_record
+        certify hashable
+
+    phase privilege_review:
+        require scope_definition.passed
+        await privilege_review_completed
+        require verify_privileged_review_complete()
+        action complete_privilege_review()
+        action chain_evidence()
+        when privilege_claim_count > 0:
+            require require_legal_review_complete()
+            action prepare_privilege_log()
+        evidence privilege_review_log
+        certify hashable
+
+    phase pii_review:
+        require privilege_review.passed
+        await pii_review_completed
+        action complete_pii_review()
+        action save_evidence()
+        when contains_pii == true:
+            require verify_dpo_approval()
+            action document_pii_handling()
+        when contains_phi == true:
+            require verify_compliance_approval()
+            action document_hipaa_considerations()
+        evidence pii_scan_report
+
+    phase cross_agency_analysis:
+        require pii_review.passed
+        require require_legal_review_complete()
+        action assess_cross_agency_risk()
+        action record_workflow_step()
+        when cross_agency_risk == "LOW":
+            action document_single_agency()
+        when cross_agency_risk == "MODERATE":
+            require verify_gc_approval()
+            action document_cross_agency_considerations()
+        when cross_agency_risk == "HIGH":
+            require verify_executive_approval()
+            require require_legal_review_complete()
+            action develop_coordination_strategy()
+        when cross_agency_risk == "CERTAIN":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action document_multi_agency_coordination()
+        evidence cross_agency_analysis
+
+    phase strategic_review:
+        require cross_agency_analysis.passed
+        action complete_strategic_review()
+        action chain_evidence()
+        when public_record_risk == "FOIA_UNLIKELY":
+            action document_confidentiality_expectation()
+        when public_record_risk == "FOIA_LIKELY":
+            require verify_gc_approval()
+            action develop_public_response()
+        when public_record_risk == "FOIA_CERTAIN":
+            require verify_executive_approval()
+            action coordinate_communications()
+        evidence strategic_memo
+
+    phase gc_authorization:
+        require strategic_review.passed
+        await gc_authorized
+        require verify_gc_approval()
+        require require_legal_review_complete()
+        action obtain_regulatory_response_authorization()
+        action lock_criteria()
+        when regulator_type == "DOJ":
+            require verify_board_approval()
+            action document_doj_considerations()
+        when regulator_type == "SEC":
+            require verify_gc_approval()
+            action document_sec_considerations()
+        when regulator_type == "FTC":
+            require verify_gc_approval()
+            action document_ftc_considerations()
+        evidence gc_authorization_memo
+        certify hashable
+
+    phase disclosure_manifest:
+        require gc_authorization.passed
+        require verify_privileged_review_complete()
+        action prepare_disclosure_manifest()
+        action verify_case_integrity()
+        when document_count > 1000:
+            require verify_gc_approval()
+            action document_staged_production()
+        evidence disclosure_manifest
+        certify hashable
+
+    phase certification:
+        require disclosure_manifest.passed
+        await disclosure_transmitted
+        require require_policy_pass("regulatory_disclosure")
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        evidence regulatory_disclosure_certificate
+        certify immutable
+
+situations:
+    when regulator_type == "DOJ":
+        require verify_board_approval()
+        require require_legal_review_complete()
+
+    when regulator_type == "SEC":
+        require verify_gc_approval()
+
+    when subpoena_deadline < 14:
+        waiting_period 0..7 days
+        require verify_gc_approval()
+
+    when foreign_government == true:
+        require verify_board_approval()
+        require verify_gc_approval()
+        require require_legal_review_complete()
+
+roles:
+    regulatory_counsel:
+        actions: [create_workflow_run, define_disclosure_scope, complete_privilege_review, assess_cross_agency_risk, document_scope_limitations, document_scope_boundaries, prepare_privilege_log]
+        requires_mfa: true
+
+    privacy_officer:
+        actions: [complete_pii_review, document_pii_handling, document_hipaa_considerations]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [lock_criteria, obtain_regulatory_response_authorization, emit_certificate, record_attestation, document_doj_considerations, document_sec_considerations]
+        requires_mfa: true
+        break_glass: true
+
+    litigation_paralegal:
+        actions: [prepare_disclosure_manifest, document_staged_production]
+        requires_mfa: true
+
+    communications:
+        actions: [complete_strategic_review, develop_public_response, coordinate_communications, document_confidentiality_expectation]
+        requires_mfa: true
+
+    compliance_officer:
+        actions: [verify_compulsion_basis, document_voluntary_rationale, develop_coordination_strategy, document_multi_agency_coordination]
+        requires_mfa: true

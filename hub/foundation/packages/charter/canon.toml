@@ -1,0 +1,38 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "charter"
+version = "2026.01"
+description = "Charter lifecycle management, surface binding, and decision evaluation."
+
+[package.regulatory]
+basis = [
+    "SOX \u00a7 404",
+    "SOC 2 CC1.1",
+]
+
+[phrases]
+action = [
+    "activate_charter",
+    "bind_surface",
+    "create_charter",
+    "evaluate_decision",
+]
+
+[schemas]
+types = [
+    "ActivateCharterResult",
+    "BindSurfaceResult",
+    "Charter",
+    "CharterContent",
+    "CharterStatus",
+    "CharterSurfaceBinding",
+    "CharterSurfaceBindingContent",
+    "CreateCharterResult",
+    "DecisionResult",
+    "SurfaceBinding",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

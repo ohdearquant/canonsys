@@ -1,0 +1,189 @@
+charter "Reinstate Terminated Access Exception" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.reinstate_access
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow reinstate_access:
+    phase eligibility:
+        await request_submitted
+        require verify_approval_chain_complete()
+        require assess_control_coverage()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase termination_review:
+        require eligibility.passed
+        require get_case_history()
+        action review_termination_record()
+        evidence termination_record
+        output TerminationStatus
+
+    phase agreement_review:
+        require termination_review.passed
+        require verify_gc_approval()
+        action review_separation_agreement()
+        evidence agreement_review
+        output AgreementStatus
+        certify hashable
+
+    phase litigation_check:
+        require agreement_review.passed
+        require verify_case_integrity()
+        action check_litigation_hold()
+        evidence litigation_status
+        output LitigationStatus
+
+    phase justification:
+        require litigation_check.passed
+        require require_access_justification()
+        action document_justification()
+        evidence business_justification
+        output JustificationPacket
+
+    phase scope_justification:
+        require justification.passed
+        require verify_approval_chain_complete()
+        action document_scope_justification()
+        evidence scope_justification
+        output ScopeJustification
+
+    phase security_review:
+        require scope_justification.passed
+        require verify_ciso_approval()
+        action perform_security_review()
+        evidence security_review
+        output SecurityAssessment
+
+    phase approvals:
+        require security_review.passed
+        require verify_hr_approval()
+        require verify_approval_chain_complete()
+        action collect_approvals()
+        evidence approval_packet
+        output ApprovalPacket
+
+    phase legal_approval:
+        require approvals.passed
+        await approval_granted
+        require verify_gc_approval()
+        action collect_legal_approval()
+        evidence legal_approval
+        output LegalApproval
+
+    phase monitoring_setup:
+        require legal_approval.passed
+        require schedule_auto_revert()
+        action configure_monitoring()
+        evidence monitoring_plan
+        output MonitoringPlan
+
+    phase revocation_schedule:
+        require monitoring_setup.passed
+        require enforce_expiry()
+        action schedule_auto_revocation()
+        evidence revocation_schedule
+        output RevocationSchedule
+
+    phase policy:
+        require revocation_schedule.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence reinstate_access_certificate
+        output DecisionCertificate
+
+situations:
+    when termination_type == "INVOLUNTARY_PERFORMANCE":
+        require verify_gc_approval()
+
+    when termination_type == "INVOLUNTARY_CONDUCT":
+        require verify_gc_approval()
+
+    when termination_type == "INVOLUNTARY_RIF":
+        require verify_gc_approval()
+
+    when conduct_category == "FRAUD":
+        require verify_gc_approval()
+        require verify_ciso_approval()
+        require verify_executive_approval()
+
+    when conduct_category == "DATA_BREACH":
+        require verify_gc_approval()
+        require verify_ciso_approval()
+        require verify_executive_approval()
+
+    when separation_agreement_present == "YES":
+        require verify_gc_approval()
+
+    when litigation_hold_present == "YES":
+        require verify_gc_approval()
+
+    when access_scope_requested == "FULL_PRIOR_ACCESS":
+        require verify_ciso_approval()
+        require verify_hr_approval()
+
+    when access_mode == "WRITE":
+        require require_access_justification()
+
+    when access_mode == "ADMIN":
+        require verify_ciso_approval()
+
+roles:
+    access_requestor:
+        actions: [check_eligibility, document_justification, document_scope_justification]
+        requires_mfa: true
+
+    hr_leadership:
+        actions: [review_termination_record, review_separation_agreement, collect_approvals]
+        requires_mfa: true
+
+    former_manager:
+        actions: [collect_approvals]
+        requires_mfa: true
+
+    security_lead:
+        actions: [check_litigation_hold, perform_security_review, configure_monitoring, schedule_auto_revocation]
+        requires_mfa: true
+
+    legal:
+        actions: [collect_legal_approval]
+        requires_mfa: true
+
+    vp_hr:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+
+    ciso:
+        actions: [perform_security_review, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    general_counsel:
+        actions: [collect_legal_approval, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    ceo:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true

@@ -1,0 +1,66 @@
+charter "Certified Evidence Packet" v1.0
+
+workflow cep_certification:
+    phase source_classification:
+        action classify_evidence_type()
+        action validate_source_class()
+        action verify_covered_timeframe()
+        evidence source_classification_record
+
+    phase fact_extraction:
+        require source_classification.passed
+        action extract_observable_facts()
+        action validate_fact_constraints()
+        action reject_narrative_language()
+        evidence fact_extraction_record
+
+    phase sanitization:
+        require fact_extraction.passed
+        action redact_third_party_pii()
+        action mask_irrelevant_content()
+        action verify_no_raw_references()
+        evidence sanitization_record
+
+    phase attestation:
+        require sanitization.passed
+        require require_authority_assertion()
+        action verify_certifying_role()
+        action record_attestation()
+        evidence attestation_record
+
+    phase sealing:
+        require attestation.passed
+        action compute_content_hash()
+        action generate_cryptographic_signature()
+        action chain_evidence()
+        certify immutable
+        evidence cep_seal_record
+
+situations:
+    when cep_type == "performance_data":
+        require require_numeric_only()
+        require require_time_bounded()
+
+    when cep_type == "policy_violation":
+        require require_specific_log_reference()
+        require require_no_surrounding_chatter()
+
+    when cep_type == "investigation_finding":
+        require require_investigation_closed()
+        require require_no_witness_interviews()
+
+    when cep_type == "attendance_log":
+        require require_timecard_data_only()
+
+roles:
+    hrbp:
+        actions: [extract_observable_facts, validate_fact_constraints, record_attestation]
+        requires_mfa: true
+
+    er_investigator:
+        actions: [classify_evidence_type, redact_third_party_pii, mask_irrelevant_content]
+        requires_mfa: true
+
+    authorized_manager:
+        actions: [verify_covered_timeframe, validate_source_class]
+        requires_mfa: true

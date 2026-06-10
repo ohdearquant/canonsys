@@ -1,0 +1,37 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "justification"
+version = "2026.01"
+description = "Business justification validation, classification, and evidence mapping for waivers and reason codes."
+
+[package.regulatory]
+basis = [
+    "SOX \u00a7 404",
+    "COSO",
+]
+
+[phrases]
+require = [
+    "require_justification_documented",
+    "require_type_specific_evidence",
+]
+
+action = [
+    "classify_justification",
+    "map_reason_code_to_evidence",
+    "map_waiver_reason_to_evidence",
+    "validate_business_justification",
+]
+
+[schemas]
+types = [
+    "EvidenceRequirement",
+    "JustificationClass",
+    "ReasonEvidenceMapping",
+    "WaiverEvidenceMapping",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

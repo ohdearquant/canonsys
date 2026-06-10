@@ -1,0 +1,135 @@
+charter "Disable Data Loss Prevention" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.dlp_disable
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow dlp_disable:
+    phase eligibility:
+        await request_submitted
+        require assess_control_coverage()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase risk_assessment:
+        require eligibility.passed
+        require assess_control_coverage()
+        action assess_risk()
+        evidence risk_assessment
+        output RiskAssessment
+
+    phase justification:
+        require risk_assessment.passed
+        require require_access_justification()
+        action document_justification()
+        evidence business_justification
+        output JustificationPacket
+
+    phase incident_validation:
+        require justification.passed
+        require verify_case_integrity()
+        action validate_incident_record()
+        evidence incident_record
+        output IncidentValidation
+
+    phase controls_review:
+        require incident_validation.passed
+        require assess_control_coverage()
+        require derive_control_equivalence_score()
+        action evaluate_compensating_controls()
+        evidence compensating_controls_doc
+        output ControlsAnalysis
+        certify hashable
+
+    phase security_review:
+        require controls_review.passed
+        require verify_ciso_approval()
+        action perform_security_review()
+        evidence security_review
+        output SecurityAssessment
+
+    phase dpo_review:
+        require security_review.passed
+        require verify_dpo_approval()
+        action perform_dpo_review()
+        evidence dpo_review
+        output DPOReview
+
+    phase reenable_planning:
+        require dpo_review.passed
+        require schedule_auto_revert()
+        action document_reenable_plan()
+        evidence re_enablement_plan
+        output ReEnablementPlan
+
+    phase approvals:
+        require reenable_planning.passed
+        await approval_granted
+        require verify_approval_chain_complete()
+        action collect_approvals()
+        evidence approval_packet
+        output ApprovalPacket
+
+    phase policy:
+        require approvals.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence dlp_disable_certificate
+        output DecisionCertificate
+
+situations:
+    when scope == "ORGANIZATION_WIDE":
+        require verify_ciso_approval()
+        require verify_dpo_approval()
+
+    when data_classification_at_risk == "RESTRICTED":
+        require assess_control_coverage()
+        require verify_dpo_approval()
+
+    when data_classification_at_risk == "CONFIDENTIAL":
+        require derive_control_equivalence_score()
+
+    when incident_declared == "YES":
+        require verify_case_integrity()
+
+    when affected_data_volume_band == "VERY_HIGH":
+        require verify_executive_approval()
+
+roles:
+    dlp_requestor:
+        actions: [check_eligibility, assess_risk, document_justification]
+        requires_mfa: true
+
+    security_lead:
+        actions: [validate_incident_record, evaluate_compensating_controls, perform_security_review]
+        requires_mfa: true
+
+    dpo:
+        actions: [perform_dpo_review]
+        requires_mfa: true
+
+    ciso:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true

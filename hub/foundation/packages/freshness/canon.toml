@@ -1,0 +1,45 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "freshness"
+version = "2026.01"
+description = "Data and review freshness checks, staleness detection, and regulatory deadline derivation."
+
+[package.regulatory]
+basis = [
+    "SOX Section 404",
+]
+
+[phrases]
+require = [
+    "require_not_expired",
+    "require_recertification_current",
+]
+
+verify = [
+    "verify_credit_freshness",
+]
+
+derive = [
+    "derive_extension_days",
+    "derive_filing_deadline",
+    "derive_quarter_end",
+    "derive_regulatory_deadline",
+]
+
+action = [
+    "check_equity_staleness",
+    "check_legal_review_freshness",
+    "check_privilege_review",
+    "check_receipt_freshness",
+    "check_tia_freshness",
+]
+
+[schemas]
+types = [
+    "FreshnessStatus",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

@@ -1,0 +1,160 @@
+charter "Privilege Waiver" v1.0
+
+packages:
+    - legal
+    - authorization
+    - certification
+    - evidence
+    - policy
+    - workflow
+
+triggers:
+    waiver_requested
+    privilege_review_completed
+    scope_assessed
+    gc_authorized
+    clawback_negotiated
+    waiver_executed
+
+workflow privilege_waiver:
+    phase initiation:
+        await waiver_requested
+        require require_legal_review_complete()
+        require require_nda_valid("privilege_waiver")
+        action create_workflow_run()
+        action identify_documents()
+        action lock_criteria()
+        evidence waiver_initiation_record
+
+    phase privilege_review:
+        require initiation.passed
+        await privilege_review_completed
+        require verify_privileged_review_complete()
+        action submit_privilege_log()
+        action chain_evidence()
+        when document_count > 100:
+            require require_dual_approval()
+            action document_review_methodology()
+        when privilege_type == "ATTORNEY_CLIENT":
+            require require_legal_review_complete()
+            action verify_privilege_basis()
+        when privilege_type == "WORK_PRODUCT":
+            require require_legal_review_complete()
+            action verify_work_product_doctrine()
+        evidence privilege_log
+        certify hashable
+
+    phase scope_assessment:
+        require privilege_review.passed
+        await scope_assessed
+        action assess_waiver_scope()
+        action record_workflow_step()
+        when waiver_scope == "LIMITED":
+            action document_scope_boundaries()
+        when waiver_scope == "SUBJECT_MATTER":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action document_subject_matter_scope()
+        when waiver_scope == "FULL_WAIVER":
+            require verify_board_approval()
+            require verify_gc_approval()
+            require require_dual_approval()
+            action document_full_waiver_justification()
+        evidence scope_assessment_memo
+        certify hashable
+
+    phase risk_assessment:
+        require scope_assessment.passed
+        require require_legal_review_complete()
+        action assess_subject_matter_risk()
+        action assess_strategic_impact()
+        when subject_matter_risk == "HIGH":
+            require verify_gc_approval()
+            action document_risk_mitigation()
+        when subject_matter_risk == "EXTREME":
+            require verify_board_approval()
+            require verify_executive_approval()
+            action obtain_ceo_acknowledgment()
+        when strategic_impact == "SEVERE":
+            require verify_board_approval()
+            action document_strategic_considerations()
+        evidence risk_assessment_memo
+
+    phase gc_authorization:
+        require risk_assessment.passed
+        await gc_authorized
+        require verify_gc_approval()
+        require require_legal_review_complete()
+        action obtain_gc_waiver_memo()
+        action save_evidence()
+        evidence gc_waiver_authorization
+        certify hashable
+
+    phase clawback_protection:
+        require gc_authorization.passed
+        await clawback_negotiated
+        action verify_clawback_protection()
+        action chain_evidence()
+        when recipient_type == "REGULATOR":
+            require require_legal_review_complete()
+            action negotiate_502d_agreement()
+        when recipient_type == "ADVERSARY":
+            require verify_board_approval()
+            action negotiate_clawback_terms()
+        evidence clawback_agreement
+
+    phase document_manifest:
+        require clawback_protection.passed
+        require verify_privileged_review_complete()
+        action prepare_document_manifest()
+        action verify_case_integrity()
+        when document_count > 1000:
+            require verify_gc_approval()
+            action request_502d_order()
+        evidence document_manifest
+        certify hashable
+
+    phase certification:
+        require document_manifest.passed
+        await waiver_executed
+        require require_policy_pass("privilege_waiver")
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        evidence privilege_waiver_certificate
+        certify immutable
+
+situations:
+    when litigation_status == "ACTIVE":
+        require require_legal_review_complete()
+        require verify_gc_approval()
+
+    when regulatory_investigation == true:
+        require verify_gc_approval()
+        require verify_board_approval()
+
+    when joint_defense_agreement == true:
+        require require_nda_valid("joint_defense")
+        require require_legal_review_complete()
+
+roles:
+    privilege_reviewer:
+        actions: [submit_privilege_log, document_review_methodology, verify_privilege_basis, verify_work_product_doctrine]
+        requires_mfa: true
+
+    litigation_counsel:
+        actions: [assess_waiver_scope, assess_subject_matter_risk, assess_strategic_impact, document_scope_boundaries, document_subject_matter_scope]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [create_workflow_run, lock_criteria, obtain_gc_waiver_memo, emit_certificate, record_attestation, document_full_waiver_justification]
+        requires_mfa: true
+        break_glass: true
+
+    external_counsel:
+        actions: [verify_clawback_protection, negotiate_502d_agreement, negotiate_clawback_terms, request_502d_order, prepare_document_manifest]
+        requires_mfa: true
+
+    board_secretary:
+        actions: [document_strategic_considerations, obtain_ceo_acknowledgment, document_risk_mitigation]
+        requires_mfa: true

@@ -1,0 +1,168 @@
+charter "Release Customer Data Under Legal Demand" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.legal_data_release
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow legal_data_release:
+    phase eligibility:
+        await request_submitted
+        require verify_case_integrity()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase demand_validation:
+        require eligibility.passed
+        require verify_gc_approval()
+        action validate_demand()
+        evidence demand_validation
+        output DemandValidation
+        certify hashable
+
+    phase jurisdiction_analysis:
+        require demand_validation.passed
+        require verify_gc_approval()
+        action analyze_jurisdiction()
+        evidence jurisdiction_analysis
+        output JurisdictionAnalysis
+
+    phase scope_analysis:
+        require jurisdiction_analysis.passed
+        require get_case_evidence()
+        action analyze_scope()
+        evidence data_inventory
+        output ScopeAnalysis
+
+    phase minimization_review:
+        require scope_analysis.passed
+        require verify_approval_chain_complete()
+        action perform_minimization()
+        evidence minimization_analysis
+        output MinimizationResult
+
+    phase bulk_minimization:
+        require minimization_review.passed
+        require verify_chain_of_custody_complete()
+        action document_bulk_minimization()
+        evidence bulk_minimization_metrics
+        output BulkMinimizationMetrics
+
+    phase notification_evaluation:
+        require bulk_minimization.passed
+        require verify_approval_chain_complete()
+        action evaluate_notification()
+        evidence notification_decision
+        output NotificationDecision
+
+    phase objection_analysis:
+        require notification_evaluation.passed
+        require verify_gc_approval()
+        action analyze_objection_options()
+        evidence objection_memo
+        output ObjectionAnalysis
+
+    phase counsel_review:
+        require objection_analysis.passed
+        require verify_gc_approval()
+        action collect_counsel_review()
+        evidence counsel_review
+        output CounselReview
+
+    phase approvals:
+        require counsel_review.passed
+        await approval_granted
+        require verify_approval_chain_complete()
+        action collect_approvals()
+        evidence approval_packet
+        output ApprovalPacket
+
+    phase disclosure_preparation:
+        require approvals.passed
+        require chain_evidence()
+        action prepare_disclosure()
+        evidence disclosure_record
+        output DisclosurePreparation
+
+    phase policy:
+        require disclosure_preparation.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence legal_release_certificate
+        output DecisionCertificate
+
+situations:
+    when request_type == "VOLUNTARY_REQUEST":
+        require require_access_justification()
+
+    when request_type == "SEARCH_WARRANT":
+        require verify_gc_approval()
+
+    when request_type == "NATIONAL_SECURITY_LETTER":
+        require verify_gc_approval()
+
+    when requesting_authority == "PRIVATE_LITIGANT":
+        require verify_gc_approval()
+
+    when requesting_authority == "FOREIGN_GOVERNMENT":
+        require verify_gc_approval()
+        require verify_ofac_clearance()
+
+    when data_scope_requested == "BULK_DATA":
+        require verify_executive_approval()
+        require verify_chain_of_custody_complete()
+
+    when data_classification == "RESTRICTED":
+        require verify_ciso_approval()
+        require verify_gc_approval()
+
+roles:
+    legal_analyst:
+        actions: [check_eligibility, validate_demand, analyze_jurisdiction, analyze_scope]
+        requires_mfa: true
+
+    privacy_analyst:
+        actions: [perform_minimization, document_bulk_minimization, evaluate_notification]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [analyze_objection_options, collect_counsel_review, prepare_disclosure]
+        requires_mfa: true
+
+    dpo:
+        actions: [collect_approvals]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    ciso:
+        actions: [collect_approvals]
+        requires_mfa: true
+
+    ceo:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true

@@ -1,0 +1,45 @@
+# Canon Vocabulary Package Manifest
+# This file defines the package's vocabulary contribution to the Canon system
+
+[package]
+name = "ai_governance"
+version = "2026.01"
+description = "AI/ML model governance, bias assessment, and human review requirements"
+domain = "ai"
+
+[package.regulatory]
+basis = [
+    "EU AI Act",
+    "NYC LL144 (Local Law 144)",
+    "Colorado SB24-205",
+    "GDPR Article 22",
+]
+
+[phrases]
+# Requirement phrases (gates that block without satisfaction)
+require = [
+    "require_bias_assessment_documented",
+    "require_human_review_for_high_risk",
+    "require_human_review_present",
+]
+
+# Verification phrases (checks that return boolean)
+verify = [
+    "verify_bias_assessment_complete",
+    "verify_human_review_complete",
+    "verify_same_tool",
+]
+
+[schemas]
+types = [
+    "RiskLevel",
+    "BiasAssessmentStatus",
+    "HumanReviewStatus",
+]
+
+[dependencies]
+# Other vocabulary packages this package depends on
+packages = []
+
+# Canon core modules required
+core = ["canon.enforcement", "canon.db"]

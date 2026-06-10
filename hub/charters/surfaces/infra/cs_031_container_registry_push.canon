@@ -1,0 +1,132 @@
+charter "CS-031 Container Registry Push" v2.0
+
+packages:
+    - infra
+    - deployment
+    - controls
+    - evidence
+    - authorization
+    - lifecycle
+
+triggers:
+    image_push_requested
+    manual_registry_push_initiated
+    base_image_update_proposed
+    emergency_deployment_needed
+
+workflow container_registry_push:
+    phase eligibility:
+        require require_entity_exists()
+        require require_context_valid()
+        require require_registry_accessible()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_facts_schema_valid()
+        require require_unknown_denied()
+        action submit_facts()
+        action extract_image_metadata()
+        evidence facts_packet
+
+    phase vulnerability_scan:
+        require facts.passed
+        require require_scan_complete()
+        action run_vulnerability_scan()
+        action verify_scan_results()
+        action check_exploitability_status()
+        evidence vulnerability_scan_record
+        certify hashable
+
+        when vulnerability_severity == "CRITICAL":
+            require verify_ciso_approval()
+
+    phase supply_chain_verification:
+        require vulnerability_scan.passed
+        require require_base_image_approved()
+        action verify_base_image_provenance()
+        action verify_sbom_present()
+        action derive_tag_risk_class()
+        evidence supply_chain_record
+        certify hashable
+
+    phase image_signing:
+        require supply_chain_verification.passed
+        require require_signature_valid()
+        action sign_image()
+        action verify_signer_trusted()
+        action attach_build_attestation()
+        evidence signing_record
+        certify hashable
+
+    phase evidence_binding:
+        require image_signing.passed
+        require require_chain_of_custody_complete()
+        action bind_evidence()
+        action create_cep()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        action seal_cep()
+        action certify_decision()
+        certify immutable
+        evidence registry_push_certificate
+
+situations:
+    when environment == "PROD":
+        require require_deployment_approval()
+        require require_distinct_identities()
+
+    when vulnerability_severity == "CRITICAL":
+        require verify_ciso_approval()
+        require require_access_justification()
+
+    when vulnerability_severity == "HIGH":
+        require require_dual_approval()
+        require verify_ciso_approval()
+
+    when base_image_approved == "false":
+        require require_dual_approval()
+        require require_access_justification()
+
+    when base_image_approved == "UNKNOWN":
+        require require_dual_approval()
+
+    when tag_risk_class == "MUTABLE":
+        require require_dual_approval()
+        require require_access_justification()
+
+    when signature_status == "INVALID":
+        require verify_ciso_approval()
+        require require_access_justification()
+
+    when scan_status == "NOT_RUN":
+        require verify_ciso_approval()
+        require require_access_justification()
+
+roles:
+    ci_pipeline:
+        actions: [run_vulnerability_scan, sign_image, attach_build_attestation]
+        requires_mfa: false
+
+    engineer:
+        actions: [submit_facts, extract_image_metadata, verify_scan_results, verify_sbom_present]
+        requires_mfa: true
+
+    security_lead:
+        actions: [check_exploitability_status, verify_base_image_provenance, verify_signer_trusted, certify_decision]
+        requires_mfa: true
+
+    platform_lead:
+        actions: [seal_cep]
+        requires_mfa: true
+        break_glass: true

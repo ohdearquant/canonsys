@@ -7,16 +7,70 @@ requires-python = ">=3.11"
 [tool.uv.workspace]
 members = [
     "libs/*",
+    "hub/foundation/packages/*",
+    "hub/domains/corporate/packages/*",
+    "hub/domains/governance/packages/*",
+    "hub/catalogs",
 ]
 
 [tool.uv.sources]
 kron = { workspace = true }
 canon = { workspace = true }
+canon-catalogs = { workspace = true }
+canon-vocab-ai-governance = { workspace = true }
+canon-vocab-authorization = { workspace = true }
+canon-vocab-certification = { workspace = true }
+canon-vocab-charter = { workspace = true }
+canon-vocab-consent = { workspace = true }
+canon-vocab-controls = { workspace = true }
+canon-vocab-core = { workspace = true }
+canon-vocab-corporate = { workspace = true }
+canon-vocab-data-protection = { workspace = true }
+canon-vocab-deployment = { workspace = true }
+canon-vocab-evidence = { workspace = true }
+canon-vocab-export-control = { workspace = true }
+canon-vocab-freshness = { workspace = true }
+canon-vocab-identity = { workspace = true }
+canon-vocab-incident = { workspace = true }
+canon-vocab-infra = { workspace = true }
+canon-vocab-justification = { workspace = true }
+canon-vocab-legal = { workspace = true }
+canon-vocab-notice = { workspace = true }
+canon-vocab-pattern = { workspace = true }
+canon-vocab-policy = { workspace = true }
+canon-vocab-scope = { workspace = true }
+canon-vocab-timing = { workspace = true }
+canon-vocab-workflow = { workspace = true }
 
 [dependency-groups]
 dev = [
     "canon",
     "kron",
+    "canon-catalogs",
+    "canon-vocab-ai-governance",
+    "canon-vocab-authorization",
+    "canon-vocab-certification",
+    "canon-vocab-charter",
+    "canon-vocab-consent",
+    "canon-vocab-controls",
+    "canon-vocab-core",
+    "canon-vocab-corporate",
+    "canon-vocab-data-protection",
+    "canon-vocab-deployment",
+    "canon-vocab-evidence",
+    "canon-vocab-export-control",
+    "canon-vocab-freshness",
+    "canon-vocab-identity",
+    "canon-vocab-incident",
+    "canon-vocab-infra",
+    "canon-vocab-justification",
+    "canon-vocab-legal",
+    "canon-vocab-notice",
+    "canon-vocab-pattern",
+    "canon-vocab-policy",
+    "canon-vocab-scope",
+    "canon-vocab-timing",
+    "canon-vocab-workflow",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24.0",
     "ruff>=0.15.0",

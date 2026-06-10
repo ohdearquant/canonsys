@@ -1,0 +1,36 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "workflow"
+version = "2026.01"
+description = "Workflow lifecycle, step recording, vendor call provenance, and completion tracking."
+
+[package.regulatory]
+basis = [
+    "NYC LL144",
+    "EU AI Act",
+    "SOC 2",
+]
+
+[phrases]
+require = [
+    "require_workflow_complete",
+]
+
+action = [
+    "record_vendor_call",
+    "record_workflow_step",
+    "complete_workflow_run",
+    "create_workflow_run",
+]
+
+[schemas]
+types = [
+    "VendorCallStatus",
+    "WorkflowRunStatus",
+    "WorkflowType",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

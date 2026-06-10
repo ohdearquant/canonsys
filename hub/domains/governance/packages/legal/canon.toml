@@ -1,0 +1,50 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "legal"
+version = "2026.01"
+description = "Legal holds, NDA management, appeal channels, clean team, criteria locking, and privilege review."
+
+[package.regulatory]
+basis = [
+    "SOX Section 802",
+]
+
+[phrases]
+require = [
+    "require_appeal_exhausted",
+    "require_clean_team_for_competitive_intel",
+    "require_deletion_clearance",
+    "require_legal_hold_active",
+    "require_legal_review_complete",
+    "require_modification_clearance",
+    "require_nda_valid",
+    "require_proceedings_closed",
+]
+
+verify = [
+    "verify_appeal_channel_available",
+    "verify_clean_team_membership",
+    "verify_nda_status",
+    "verify_privileged_review_complete",
+]
+
+action = [
+    "lock_criteria",
+]
+
+[schemas]
+types = [
+    "AppealChannelType",
+    "AppealStatus",
+    "CleanTeamStatus",
+    "CriteriaLock",
+    "HoldType",
+    "NDAStatus",
+    "PrivilegedReviewStatus",
+    "ProceedingsStatus",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

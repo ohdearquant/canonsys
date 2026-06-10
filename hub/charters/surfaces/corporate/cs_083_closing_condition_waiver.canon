@@ -1,0 +1,192 @@
+charter "Closing Condition Waiver" v1.0
+
+schemas: canon.corporate@2026.01
+
+packages:
+    - corporate
+    - legal
+    - authorization
+    - certification
+    - evidence
+
+policies:
+    - corporate.closing_condition_waiver
+
+triggers:
+    deal_initiated
+    diligence_completed
+    condition_met
+
+workflow closing_condition_waiver:
+    phase eligibility:
+        await deal_initiated
+        require derive_condition_satisfaction_status()
+        require derive_conditional_findings_addressed()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase condition_history:
+        require eligibility.passed
+        require get_case_history()
+        action document_condition_history()
+        evidence condition_tracking
+        output ConditionHistory
+
+    phase risk_assessment:
+        require condition_history.passed
+        require derive_condition_satisfaction_status()
+        action complete_risk_assessment()
+        evidence risk_assessment_memo
+        output RiskAssessment
+
+    phase consideration_negotiation:
+        require risk_assessment.passed
+        require verify_approval_chain_complete()
+        action negotiate_consideration()
+        evidence consideration_memo
+        output ConsiderationTerms
+
+    phase specialized_review:
+        require consideration_negotiation.passed
+        require verify_gc_approval()
+        action obtain_specialized_review()
+        evidence specialized_opinion
+        output SpecializedOpinion
+
+    phase waiver_drafting:
+        require specialized_review.passed
+        await diligence_completed
+        require verify_gc_approval()
+        require lock_criteria()
+        action draft_waiver_language()
+        evidence legal_opinion
+        output WaiverDraft
+
+    phase board_approval:
+        require waiver_drafting.passed
+        require verify_board_approval()
+        action obtain_board_approval()
+        evidence board_resolution
+        output BoardApproval
+
+    phase counterparty_execution:
+        require board_approval.passed
+        require verify_approval_chain_complete()
+        action execute_with_counterparty()
+        evidence waiver_letter
+        output CounterpartyAck
+
+    phase evidence_binding:
+        require counterparty_execution.passed
+        require chain_evidence()
+        action bind_evidence()
+        evidence evidence_packet
+        output EvidencePacket
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await condition_met
+        action emit_certificate()
+        certify immutable
+        evidence closing_condition_waiver_certificate
+        output DecisionCertificate
+
+situations:
+    when waiver_scope == "FULL_WAIVER":
+        require verify_board_approval()
+
+    when risk_exposure_band == "HIGH":
+        require verify_board_approval()
+
+    when risk_exposure_band == "SEVERE":
+        require verify_board_approval()
+        require verify_executive_approval()
+
+    when risk_confidence == "LOW":
+        require derive_condition_satisfaction_status()
+
+    when condition_type == "REGULATORY_APPROVAL":
+        require verify_gc_approval()
+
+    when condition_type == "HSR_CLEARANCE":
+        require verify_gc_approval()
+
+    when condition_type == "NO_MAC":
+        require derive_condition_satisfaction_status()
+
+    when condition_type == "FINANCING":
+        require verify_cfo_approval()
+
+    when condition_type == "GOVERNMENT_CONTRACT":
+        require verify_gc_approval()
+
+    when condition_type == "TAX":
+        require verify_cfo_approval()
+
+    when condition_type == "THIRD_PARTY_CONSENT":
+        require derive_condition_satisfaction_status()
+
+    when condition_type == "REPRESENTATION_ACCURACY":
+        require derive_conditional_findings_addressed()
+
+    when condition_satisfaction_status == "NOT_SATISFIED":
+        require derive_condition_satisfaction_status()
+
+    when waiver_party == "BUYER":
+        require verify_board_approval()
+
+    when waiver_consideration != "NONE":
+        require verify_approval_chain_complete()
+
+    when waiver_consideration == "REPRESENTATION_INSURANCE":
+        require verify_cfo_approval()
+
+    when days_to_outside_date_near == "YES":
+        require verify_executive_approval()
+
+    when condition_satisfaction_mismatch == "YES":
+        require derive_conditional_findings_addressed()
+
+roles:
+    deal_team:
+        actions: [check_eligibility, document_condition_history, negotiate_consideration]
+        requires_mfa: true
+
+    transaction_counsel:
+        actions: [complete_risk_assessment, obtain_specialized_review, draft_waiver_language]
+        requires_mfa: true
+
+    specialized_counsel:
+        actions: [obtain_specialized_review]
+        requires_mfa: true
+
+    deal_lead:
+        actions: [negotiate_consideration, execute_with_counterparty]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [obtain_board_approval, bind_evidence, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    cfo:
+        actions: [obtain_specialized_review, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    ceo:
+        actions: [emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    board_chair:
+        actions: [obtain_board_approval, emit_certificate]
+        requires_mfa: true
+        break_glass: true

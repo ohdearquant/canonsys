@@ -1,0 +1,47 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "data_protection"
+version = "2026.01"
+description = "Data classification, encryption, minimization, purpose limitation, and retention compliance."
+
+[package.regulatory]
+basis = [
+    "GDPR Art. 32",
+    "HIPAA \u00a7 164.312",
+    "PCI DSS",
+]
+
+[phrases]
+require = [
+    "require_data_classification_assigned",
+    "require_encrypted_transmission",
+    "require_internal_publication",
+    "require_limited_audience",
+    "require_pci_classification",
+    "require_phi_classification",
+    "require_pii_classification",
+    "require_processor_terms_verified",
+    "require_retention_compliance",
+]
+
+verify = [
+    "verify_data_minimization",
+    "verify_purpose_limitation",
+]
+
+[schemas]
+types = [
+    "AudienceScope",
+    "ClassificationLevel",
+    "ConfidentialityLevel",
+    "EncryptionStandard",
+    "EncryptionStatus",
+    "ProcessorTermsStatus",
+    "PublicationRestriction",
+    "RetentionStatus",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

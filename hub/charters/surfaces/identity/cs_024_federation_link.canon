@@ -1,0 +1,197 @@
+charter "Identity Federation Link" v1.0
+
+# CS-024 - IDENTITY Domain - PERMISSION_GRANT Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: NIST 800-63, FedRAMP, GDPR
+
+packages:
+    - identity
+    - authorization
+    - certification
+    - core
+    - legal
+    - lifecycle
+    - pattern
+    - policy
+
+triggers:
+    requestor_requests_federation
+    metadata_exchanged
+    security_assessed
+    legal_agreement_signed
+    attributes_mapped
+    federation_established
+    federation_recertified
+    federation_terminated
+
+workflow federation_link:
+    phase request_submission:
+        await requestor_requests_federation
+        require require_requestor_authorized()
+        require require_decision_not_certified()
+        action check_eligibility()
+        when idp_type == "UNKNOWN":
+            require require_idp_type_clarification()
+        when federation_protocol == "UNKNOWN":
+            require require_protocol_clarification()
+        evidence eligibility_record
+
+    phase metadata_exchange:
+        require request_submission.passed
+        await metadata_exchanged
+        action receive_idp_metadata()
+        action validate_metadata_signature()
+        action verify_metadata_valid()
+        evidence metadata_validation_record
+        certify hashable
+
+    phase security_assessment:
+        require metadata_exchange.passed
+        await security_assessed
+        action assess_idp_security()
+        action verify_mfa_enforced_at_idp()
+        action evaluate_token_lifetime()
+        when environment == "PROD":
+            require require_mfa_enforced_at_idp()
+            require require_aal2_or_higher()
+        when idp_type == "SOCIAL_IDP":
+            require require_ciso_override_for_prod()
+        when auto_provisioning == "ENABLED":
+            require require_security_reviewed()
+        when auto_provisioning == "UNKNOWN":
+            require require_provisioning_clarification()
+        evidence security_assessment_record
+
+    phase legal_agreement:
+        require security_assessment.passed
+        await legal_agreement_signed
+        action request_legal_review()
+        action verify_legal_agreement_signed()
+        when idp_type == "PARTNER_IDP":
+            require require_legal_reviewed()
+        when idp_type == "SUBSIDIARY_IDP":
+            require require_legal_reviewed()
+        evidence legal_agreement_record
+        certify hashable
+
+    phase attribute_mapping:
+        require legal_agreement.passed
+        await attributes_mapped
+        action configure_attribute_mapping()
+        action verify_default_role_assignment()
+        action validate_token_config()
+        when attribute_mapping_scope == "FULL_PROFILE":
+            require require_security_reviewed()
+        when default_role_elevated == "true":
+            require require_security_reviewed()
+        evidence attribute_mapping_record
+
+    phase assurance_validation:
+        require attribute_mapping.passed
+        action verify_assurance_level()
+        action derive_prior_action_count()
+        when assurance_level == "AAL1":
+            require require_aal1_exception_approved()
+        when assurance_level == "UNKNOWN":
+            require require_assurance_level_clarification()
+        evidence assurance_validation_record
+
+    phase policy_evaluation:
+        require assurance_validation.passed
+        require require_metadata_validated()
+        require require_assurance_level_valid()
+        require require_token_lifetime_valid()
+        require require_policy_pass("federation_link")
+        action evaluate_federation_policy()
+        evidence policy_evaluation_record
+
+    phase federation_establishment:
+        require policy_evaluation.passed
+        await federation_established
+        action establish_federation()
+        action schedule_recertification()
+        action compute_metadata_hash()
+        evidence federation_establishment_record
+
+    phase monitoring:
+        require federation_establishment.passed
+        action trigger_recertification()
+        action derive_prior_action_count()
+        evidence monitoring_record
+
+    phase closure:
+        require monitoring.passed
+        when closure_type == "RECERTIFICATION":
+            await federation_recertified
+            action verify_recertification_complete()
+        when closure_type == "TERMINATION":
+            await federation_terminated
+            action verify_federation_terminated()
+        action compute_facts_hash()
+        action compute_evidence_hash()
+        action mint_federation_certificate()
+        certify immutable
+        evidence federation_link_certificate
+
+situations:
+    when environment == "PROD":
+        require require_mfa_enforced_at_idp()
+        require require_aal2_or_higher()
+
+    when idp_type == "SOCIAL_IDP":
+        require require_ciso_override_for_prod()
+
+    when idp_type == "PARTNER_IDP":
+        require require_legal_reviewed()
+
+    when idp_type == "SUBSIDIARY_IDP":
+        require require_legal_reviewed()
+
+    when idp_type == "UNKNOWN":
+        require require_idp_type_clarification()
+
+    when federation_protocol == "UNKNOWN":
+        require require_protocol_clarification()
+
+    when assurance_level == "AAL1":
+        require require_aal1_exception_approved()
+
+    when assurance_level == "UNKNOWN":
+        require require_assurance_level_clarification()
+
+    when auto_provisioning == "ENABLED":
+        require require_security_reviewed()
+
+    when auto_provisioning == "UNKNOWN":
+        require require_provisioning_clarification()
+
+    when attribute_mapping_scope == "FULL_PROFILE":
+        require require_security_reviewed()
+
+    when default_role_elevated == "true":
+        require require_security_reviewed()
+
+roles:
+    requestor:
+        actions: [receive_idp_metadata, configure_attribute_mapping]
+        requires_mfa: true
+
+    identity_engineer:
+        actions: [validate_metadata_signature, verify_metadata_valid, validate_token_config, establish_federation]
+        requires_mfa: true
+
+    security_analyst:
+        actions: [assess_idp_security, verify_mfa_enforced_at_idp, evaluate_token_lifetime, verify_default_role_assignment, verify_assurance_level, derive_prior_action_count]
+        requires_mfa: true
+
+    security_lead:
+        actions: [evaluate_federation_policy, mint_federation_certificate]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [request_legal_review, verify_legal_agreement_signed]
+        requires_mfa: true
+
+    ciso:
+        actions: [mint_federation_certificate]
+        break_glass: true

@@ -1,0 +1,135 @@
+charter "Privileged Finance Role Promotion" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.finance_role_promotion
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow finance_role_promotion:
+    phase eligibility:
+        await request_submitted
+        require verify_approval_chain_complete()
+        require assess_control_coverage()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase sod_analysis:
+        require eligibility.passed
+        require require_segregation_analysis()
+        require assess_control_coverage()
+        action perform_sod_analysis()
+        evidence sod_analysis_report
+        output SoDReport
+        certify hashable
+
+    phase sod_conflict_review:
+        require sod_analysis.passed
+
+    phase background_check:
+        require sod_conflict_review.passed
+        require verify_approval_chain_complete()
+        action verify_background_status()
+        evidence background_verification
+        output BackgroundStatus
+
+    phase training_review:
+        require background_check.passed
+        require verify_approval_chain_complete()
+        action verify_training_completion()
+        evidence training_completion
+        output TrainingStatus
+
+    phase approvals:
+        require training_review.passed
+        await approval_granted
+        require verify_approval_chain_complete()
+        require verify_cfo_approval()
+        action collect_approvals()
+        evidence manager_approval
+        output ApprovalPacket
+
+    phase compliance_review:
+        require approvals.passed
+        require assess_control_coverage()
+        action perform_compliance_review()
+        evidence compliance_review
+        output ComplianceReview
+
+    phase policy:
+        require compliance_review.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence role_promotion_certificate
+        output DecisionCertificate
+
+situations:
+    when role_risk_tier == "HIGH":
+        require verify_executive_approval()
+        require verify_approval_chain_complete()
+
+    when role_risk_tier == "CRITICAL":
+        require verify_executive_approval()
+        require verify_cfo_approval()
+        require verify_approval_chain_complete()
+
+    when sox_relevant == "YES":
+        require assess_control_coverage()
+
+    when segregation_conflict_detected == "YES":
+        require require_segregation_analysis()
+
+    when financial_authority_limit == "ELEVATED":
+        require verify_approval_chain_complete()
+
+    when financial_authority_limit == "UNLIMITED":
+        require verify_cfo_approval()
+
+roles:
+    direct_manager:
+        actions: [check_eligibility, collect_approvals]
+        requires_mfa: true
+
+    hr_manager:
+        actions: [verify_background_status, verify_training_completion]
+        requires_mfa: true
+
+    compliance_officer:
+        actions: [perform_sod_analysis, perform_compliance_review]
+        requires_mfa: true
+
+    controller:
+        actions: [collect_approvals]
+        requires_mfa: true
+
+    finance_leadership:
+        actions: [collect_approvals]
+        requires_mfa: true
+
+    cfo:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    audit_chair:
+        actions: [perform_compliance_review, emit_certificate]
+        requires_mfa: true
+        break_glass: true

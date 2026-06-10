@@ -1,0 +1,41 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "export_control"
+version = "2026.01"
+description = "ITAR, EAR, OFAC screening, BIS licensing, and destination country validation."
+
+[phrases]
+require = [
+    "require_allowed_destination",
+    "require_export_clearance",
+]
+
+verify = [
+    "verify_bis_approval",
+    "verify_itar_authorization",
+    "verify_ofac_clearance",
+]
+
+action = [
+    "bis_license_must_be_valid",
+    "check_enhanced_government_screening_complete",
+    "check_military_end_use_license_obtained",
+    "destination_must_not_be_prohibited",
+    "itar_must_be_authorized",
+    "ofac_must_be_cleared",
+    "validate_destination_country",
+]
+
+[schemas]
+types = [
+    "BISLicenseType",
+    "ExportSubjectType",
+    "ITARAuthorizationType",
+    "OFACEntityType",
+    "ScreeningScope",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

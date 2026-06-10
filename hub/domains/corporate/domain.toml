@@ -1,0 +1,17 @@
+[domain]
+name = "corporate"
+description = "Corporate governance, deployment controls, and infrastructure"
+version = "2026.01"
+
+packages = [
+    "corporate",
+    "deployment",
+    "infra",
+]
+
+regulatory_basis = [
+    "SOX 302/404",
+    "SOC 2 CC7-CC8",
+]
+
+dependencies = []

@@ -1,0 +1,169 @@
+charter "SSO Bypass Approval" v1.0
+
+# CS-019 - IDENTITY Domain - OVERRIDE_EXCEPTION Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: SOC 2 CC6.1, FedRAMP, GDPR
+
+packages:
+    - identity
+    - authorization
+    - certification
+    - core
+    - incident
+    - lifecycle
+    - pattern
+    - policy
+
+triggers:
+    requester_requests_bypass
+    logging_configured
+    credential_lifecycle_set
+    manager_approves
+    security_approves
+    bypass_granted
+    bypass_expires
+    sso_restored
+
+workflow sso_bypass:
+    phase request_submission:
+        await requester_requests_bypass
+        require require_subject_exists()
+        require require_application_registered()
+        require require_decision_not_certified()
+        require require_justification_present()
+        require require_bypass_reason_valid()
+        action submit_bypass_request()
+        action validate_bypass_reason()
+        when bypass_reason == "SSO_OUTAGE":
+            require require_outage_verified()
+            require require_incident_declared()
+        evidence bypass_request_record
+
+    phase logging_configuration:
+        require request_submission.passed
+        await logging_configured
+        action configure_alternative_logging()
+        action verify_logging_active()
+        when environment == "PROD":
+            require require_alternative_logging_enabled()
+        evidence logging_config_record
+        certify hashable
+
+    phase credential_lifecycle:
+        require logging_configuration.passed
+        await credential_lifecycle_set
+        action configure_credential_expiry()
+        action verify_credential_expiry_aligned()
+        when session_binding == "UNKNOWN":
+            require require_session_binding_clarification()
+        when session_binding == "UNBOUND":
+            require require_unbound_duration_limit()
+        evidence credential_config_record
+
+    phase manager_approval:
+        require credential_lifecycle.passed
+        await manager_approves
+        require require_manager_approved()
+        action collect_manager_approval()
+        evidence manager_approval_record
+
+    phase security_review:
+        require manager_approval.passed
+        await security_approves
+        action verify_security_approval()
+        action query_bypass_history()
+        action derive_prior_action_count()
+        action check_renewal_abuse()
+        when subject_type == "VENDOR":
+            require require_security_approved()
+        when subject_type == "CONTRACTOR":
+            require require_security_approved()
+        evidence security_review_record
+
+    phase policy_evaluation:
+        require security_review.passed
+        require require_duration_bounded()
+        require require_duration_positive()
+        require require_session_binding_valid()
+        require require_credential_expiry_configured()
+        require require_renewal_abuse_not_detected()
+        require require_policy_pass("sso_bypass")
+        action evaluate_bypass_policy()
+        when environment == "PROD":
+            require require_prod_duration_limit()
+        evidence policy_evaluation_record
+
+    phase grant:
+        require policy_evaluation.passed
+        await bypass_granted
+        action grant_sso_bypass()
+        action schedule_auto_expire()
+        evidence bypass_grant_record
+
+    phase monitoring:
+        require grant.passed
+        action trigger_recertification()
+        action derive_prior_action_count()
+        evidence monitoring_record
+
+    phase closure:
+        require monitoring.passed
+        when closure_type == "AUTO":
+            await bypass_expires
+            action verify_sso_restored()
+        when closure_type == "MANUAL":
+            await sso_restored
+            action verify_bypass_revoked()
+        action compute_facts_hash()
+        action compute_evidence_hash()
+        action mint_bypass_certificate()
+        certify immutable
+        evidence sso_bypass_certificate
+
+situations:
+    when environment == "PROD":
+        require require_alternative_logging_enabled()
+        require require_prod_duration_limit()
+
+    when subject_type == "VENDOR":
+        require require_security_approved()
+
+    when subject_type == "CONTRACTOR":
+        require require_security_approved()
+
+    when bypass_reason == "SSO_OUTAGE":
+        require require_outage_verified()
+
+    when session_binding == "UNKNOWN":
+        require require_session_binding_clarification()
+
+    when session_binding == "UNBOUND":
+        require require_unbound_duration_limit()
+
+    when renewal_abuse_detected == "true":
+        require require_abuse_review_complete()
+
+roles:
+    requester:
+        actions: [submit_bypass_request, validate_bypass_reason]
+        requires_mfa: true
+
+    platform_engineer:
+        actions: [configure_alternative_logging, verify_logging_active, configure_credential_expiry, verify_credential_expiry_aligned, grant_sso_bypass]
+        requires_mfa: true
+
+    manager:
+        actions: [collect_manager_approval]
+        requires_mfa: true
+
+    security_analyst:
+        actions: [verify_security_approval, query_bypass_history, check_renewal_abuse, derive_prior_action_count]
+        requires_mfa: true
+
+    security_lead:
+        actions: [evaluate_bypass_policy, mint_bypass_certificate]
+        requires_mfa: true
+
+    ciso:
+        actions: [mint_bypass_certificate]
+        break_glass: true

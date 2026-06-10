@@ -1,0 +1,42 @@
+# Canon Catalog Package Manifest
+
+[package]
+name = "catalogs"
+version = "2026.01"
+description = "Schema catalogs for Canon Charter DSL - versioned type registries for HR and base compliance schemas."
+
+[catalogs.canon_hr]
+namespace = "canon.hr"
+version = "2026.01"
+description = "HR workflow schemas: eligibility, PIP, termination, background checks, adverse action."
+schemas = [
+    "EligibilityReport",
+    "PIPSpecification",
+    "PIPReport",
+    "ProgressReport",
+    "AcknowledgmentRecord",
+    "OutcomeRecord",
+    "TerminationCertificate",
+    "AIInterviewCertificate",
+    "HiringDecisionReport",
+    "AdverseActionNotice",
+    "BackgroundCheckReport",
+]
+
+[catalogs.canonsys]
+namespace = "canonsys"
+version = "2026.01"
+description = "Base compliance schemas: evidence, audit, consent verification, policy evaluation, certificates."
+schemas = [
+    "EvidenceReport",
+    "ChainIntegrityReport",
+    "AuditReport",
+    "ConsentVerificationReport",
+    "PolicyEvaluationReport",
+    "ComplianceCertificate",
+    "DecisionCertificate",
+]
+
+[dependencies]
+packages = []
+core = ["canon.dsl.catalog"]

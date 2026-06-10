@@ -1,0 +1,142 @@
+charter "Disable Audit Logging for System" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.disable_audit_logging
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow disable_audit_logging:
+    phase eligibility:
+        await request_submitted
+        require assess_control_coverage()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase incident_check:
+        require eligibility.passed
+        require verify_case_integrity()
+        action verify_no_active_incident()
+        evidence incident_clearance
+        output IncidentStatus
+
+    phase justification:
+        require incident_check.passed
+        require require_access_justification()
+        action document_justification()
+        evidence business_justification
+        output JustificationPacket
+
+    phase compensating_controls:
+        require justification.passed
+        require derive_compensating_logging_coverage()
+        require assess_control_coverage()
+        action evaluate_compensating_logging()
+        evidence compensating_log_config
+        output ControlsAnalysis
+        certify hashable
+
+    phase compliance_review:
+        require compensating_controls.passed
+        require assess_control_coverage()
+        action perform_compliance_review()
+        evidence compliance_review
+        output ComplianceStatus
+
+    phase security_review:
+        require compliance_review.passed
+        require verify_ciso_approval()
+        action perform_security_review()
+        evidence security_review
+        output SecurityAssessment
+
+    phase approvals:
+        require security_review.passed
+        await approval_granted
+        require verify_approval_chain_complete()
+        action collect_approvals()
+        evidence approval_record
+        output ApprovalPacket
+
+    phase reenable_planning:
+        require approvals.passed
+        require verify_auto_reenable_scheduled()
+        require schedule_auto_revert()
+        action plan_reenablement()
+        evidence re_enablement_plan
+        output ReEnablementPlan
+
+    phase reenable_scheduling:
+        require reenable_planning.passed
+        require enforce_expiry()
+        action schedule_reenable()
+        evidence reenable_schedule
+        output ReenableSchedule
+
+    phase policy:
+        require reenable_scheduling.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence logging_disable_certificate
+        output DecisionCertificate
+
+situations:
+    when system_classification == "PRODUCTION":
+        require derive_compensating_logging_coverage()
+        require assess_control_coverage()
+
+    when data_classification_in_system == "RESTRICTED":
+        require verify_ciso_approval()
+
+    when data_classification_in_system == "CONFIDENTIAL":
+        require verify_ciso_approval()
+
+    when regulatory_scope_includes_sox == "YES":
+        require assess_control_coverage()
+
+    when regulatory_scope_includes_pci == "YES":
+        require assess_control_coverage()
+
+    when regulatory_scope_includes_hipaa == "YES":
+        require assess_control_coverage()
+
+roles:
+    logging_requestor:
+        actions: [check_eligibility, document_justification]
+        requires_mfa: true
+
+    system_admin:
+        actions: [verify_no_active_incident, evaluate_compensating_logging]
+        requires_mfa: true
+
+    security_lead:
+        actions: [perform_security_review, plan_reenablement, schedule_reenable]
+        requires_mfa: true
+
+    compliance_officer:
+        actions: [perform_compliance_review, collect_approvals]
+        requires_mfa: true
+
+    ciso:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true

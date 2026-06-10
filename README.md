@@ -127,6 +127,12 @@ assert "verify_consent" in compiled.feature_names
 
 **`canon`** — Policy enforcement engine built on kron. Contains the Charter DSL (lexer → parser → compiler → resolver), the charter runtime (DAG execution with dependency resolution, evidence trails, role-based grants), OPA/Rego integration for policy evaluation, KMS/TSA cryptographic utilities, and vendor integrations (AWS KMS, S3, HashiCorp Vault). Depends on kron.
 
+**`hub`** — The governance vocabulary built on canon. 15 foundation packages (consent, evidence, authorization, certification, timing, scope, controls, justification, identity, …), domain packages for corporate and governance concerns (export control, data protection, AI governance, incident, legal, notice), and 60+ charter surfaces written in the Charter DSL — real, compiling policies for AI governance (model deployment overrides, human-review bypass, agent autonomy grants), security (DLP disable, audit-logging changes, access reinstatement), finance, legal, identity, and infrastructure. Every charter compiles in CI (`uv run pytest hub/tests`).
+
+```bash
+uv run pytest hub/tests    # 461 tests: every charter surface compiles + executor/vocabulary suites
+```
+
 ---
 
 ## Credit

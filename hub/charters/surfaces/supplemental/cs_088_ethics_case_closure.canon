@@ -1,0 +1,176 @@
+charter "Close Ethics Case Without Action" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.ethics_case_closure
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow ethics_case_closure:
+    phase eligibility:
+        await request_submitted
+        require verify_case_integrity()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase investigation_completion:
+        require eligibility.passed
+        require get_case_history()
+        require verify_chain_of_custody_complete()
+        action verify_investigation_status()
+        evidence investigation_report
+        output InvestigationStatus
+        certify hashable
+
+    phase evidence_review:
+        require investigation_completion.passed
+        require verify_case_integrity()
+        action review_evidence_completeness()
+        evidence evidence_review_memo
+        output EvidenceReviewStatus
+
+    phase partial_review_validation:
+        require evidence_review.passed
+
+    phase witness_review:
+        require partial_review_validation.passed
+        require get_case_evidence()
+        action verify_witness_interviews()
+        evidence witness_analysis
+        output WitnessReviewStatus
+
+    phase findings_documentation:
+        require witness_review.passed
+        require verify_chain_of_custody_complete()
+        action document_findings()
+        evidence findings_document
+        output FindingsPacket
+
+    phase rationale_documentation:
+        require findings_documentation.passed
+        require require_access_justification()
+        action document_rationale()
+        evidence rationale_document
+        output RationalePacket
+
+    phase conflict_check:
+        require rationale_documentation.passed
+        require verify_approval_chain_complete()
+        action verify_no_conflicts()
+        evidence conflict_disclosure
+        output ConflictCheckResult
+
+    phase review_collection:
+        require conflict_check.passed
+        require verify_gc_approval()
+        action collect_reviews()
+        evidence counsel_review
+        output ReviewPacket
+
+    phase committee_review:
+        require review_collection.passed
+        await approval_granted
+        require verify_approval_chain_complete()
+        action request_committee_review()
+        evidence committee_minutes
+        output CommitteeReview
+
+    phase hr_review:
+        require committee_review.passed
+        require verify_hr_approval()
+        action request_hr_review()
+        evidence hr_review
+        output HRReview
+
+    phase policy:
+        require hr_review.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence ethics_closure_certificate
+        output DecisionCertificate
+
+situations:
+    when subject_seniority_level == "VP":
+        require verify_executive_approval()
+
+    when subject_seniority_level == "C_LEVEL":
+        require verify_executive_approval()
+
+    when subject_seniority_level == "BOARD":
+        require verify_board_approval()
+
+    when pattern_risk_band == "ELEVATED":
+        require verify_executive_approval()
+
+    when complainant_protected_class == "YES":
+        require verify_gc_approval()
+
+    when case_type == "HARASSMENT":
+        require verify_gc_approval()
+        require verify_hr_approval()
+
+    when case_type == "DISCRIMINATION":
+        require verify_gc_approval()
+        require verify_hr_approval()
+
+    when case_type == "RETALIATION":
+        require verify_gc_approval()
+        require verify_hr_approval()
+
+    when case_type == "WHISTLEBLOWER":
+        require verify_gc_approval()
+
+    when finding_severity == "SEVERE":
+        require verify_executive_approval()
+
+    when finding_severity == "MAJOR":
+        require verify_executive_approval()
+
+    when evidence_review_complete == "PARTIAL":
+        require get_case_evidence()
+
+roles:
+    investigator:
+        actions: [check_eligibility, verify_investigation_status, review_evidence_completeness, verify_witness_interviews]
+        requires_mfa: true
+
+    ethics_officer:
+        actions: [document_findings, document_rationale, verify_no_conflicts]
+        requires_mfa: true
+
+    ethics_chair:
+        actions: [collect_reviews, request_committee_review]
+        requires_mfa: true
+
+    hr_leadership:
+        actions: [request_hr_review]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [collect_reviews, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    board_audit_chair:
+        actions: [request_committee_review, emit_certificate]
+        requires_mfa: true
+        break_glass: true

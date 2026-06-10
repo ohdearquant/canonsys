@@ -1,0 +1,253 @@
+charter "Indemnification Waiver" v1.0
+
+packages:
+    - legal
+    - authorization
+    - certification
+    - evidence
+    - policy
+    - workflow
+
+triggers:
+    waiver_requested
+    scope_defined
+    exposure_quantified
+    counterparty_assessed
+    insurance_reviewed
+    risk_accepted
+    waiver_executed
+
+workflow indemnification_waiver:
+    phase initiation:
+        await waiver_requested
+        require require_legal_review_complete()
+        require require_nda_valid("contract_negotiation")
+        action create_workflow_run()
+        action lock_criteria()
+        evidence waiver_initiation_record
+
+    phase scope_definition:
+        require initiation.passed
+        await scope_defined
+        action define_waiver_scope()
+        action chain_evidence()
+        when waiver_scope == "LIMITED":
+            action document_scope_limitations()
+        when waiver_scope == "PARTIAL":
+            require verify_gc_approval()
+            action document_partial_waiver_scope()
+        when waiver_scope == "SUBSTANTIAL":
+            require verify_gc_approval()
+            require verify_cfo_approval()
+            action document_substantial_waiver_scope()
+        when waiver_scope == "COMPLETE_WAIVER":
+            require verify_board_approval()
+            require verify_gc_approval()
+            require verify_cfo_approval()
+            action document_complete_waiver_rationale()
+        evidence waiver_document
+        certify hashable
+
+    phase exposure_analysis:
+        require scope_definition.passed
+        await exposure_quantified
+        action quantify_exposure()
+        action record_workflow_step()
+        when exposure_confidence == "HIGH":
+            action document_exposure_analysis()
+        when exposure_confidence == "MODERATE":
+            require verify_gc_approval()
+            action document_exposure_assumptions()
+        when exposure_confidence == "LOW":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action request_external_assessment()
+        when maximum_exposure == "MODERATE":
+            action document_exposure_acceptable()
+        when maximum_exposure == "HIGH":
+            require verify_executive_approval()
+            require verify_cfo_approval()
+            action document_high_exposure_justification()
+        when maximum_exposure == "BOARD_LEVEL":
+            require verify_board_approval()
+            require verify_cfo_approval()
+            action schedule_board_review()
+        evidence exposure_analysis
+
+    phase counterparty_assessment:
+        require exposure_analysis.passed
+        await counterparty_assessed
+        action assess_counterparty()
+        action chain_evidence()
+        when counterparty_strength == "STRONG":
+            action document_counterparty_acceptable()
+        when counterparty_strength == "ADEQUATE":
+            action document_counterparty_considerations()
+        when counterparty_strength == "WEAK":
+            require verify_cfo_approval()
+            require require_legal_review_complete()
+            action document_counterparty_risk()
+        when counterparty_strength == "DISTRESSED":
+            require verify_board_approval()
+            require verify_cfo_approval()
+            action document_collectability_assessment()
+        evidence credit_analysis
+
+    phase insurance_review:
+        require counterparty_assessment.passed
+        await insurance_reviewed
+        action confirm_insurance()
+        action save_evidence()
+        when coverage_status == "FULLY_COVERED":
+            action document_coverage_confirmation()
+        when coverage_status == "PARTIALLY_COVERED":
+            require verify_cfo_approval()
+            action document_coverage_gap()
+        when coverage_status == "COVERAGE_UNCERTAIN":
+            require verify_gc_approval()
+            require require_legal_review_complete()
+            action request_insurance_opinion()
+        when coverage_status == "NOT_COVERED":
+            require verify_board_approval()
+            require verify_cfo_approval()
+            action document_uninsured_risk_acceptance()
+        evidence insurance_coverage_opinion
+
+    phase claims_history:
+        require insurance_review.passed
+        action review_claims_history()
+        action chain_evidence()
+        when historical_claims == "NONE":
+            action document_clean_history()
+        when historical_claims == "INFREQUENT":
+            action document_claims_history()
+        when historical_claims == "MODERATE":
+            require verify_gc_approval()
+            action document_claims_trend_analysis()
+        when historical_claims == "FREQUENT":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action document_claims_risk_mitigation()
+        evidence claims_history_report
+
+    phase specialized_review:
+        require claims_history.passed
+        action complete_specialized_review()
+        action record_workflow_step()
+        when indemnification_type == "IP_INFRINGEMENT":
+            require verify_gc_approval()
+            action request_ip_counsel_review()
+        when indemnification_type == "DATA_BREACH":
+            require verify_ciso_approval()
+            require verify_gc_approval()
+            action request_security_review()
+        when indemnification_type == "REGULATORY_VIOLATION":
+            require verify_compliance_approval()
+            require verify_gc_approval()
+            action request_compliance_review()
+        when indemnification_type == "ENVIRONMENTAL":
+            require verify_gc_approval()
+            action request_environmental_review()
+        when indemnification_type == "PRODUCT_LIABILITY":
+            require verify_gc_approval()
+            action request_product_counsel_review()
+        evidence specialized_opinion
+
+    phase business_justification:
+        require specialized_review.passed
+        require require_legal_review_complete()
+        action document_justification()
+        action chain_evidence()
+        when exposure_exceeds_contract_value == true:
+            require verify_executive_approval()
+            action document_disproportionate_risk_acceptance()
+        evidence business_justification_memo
+
+    phase risk_acceptance:
+        require business_justification.passed
+        await risk_accepted
+        require verify_approval_chain_complete()
+        action obtain_risk_acceptance()
+        action save_evidence()
+        when regulatory_implications == "NONE":
+            action document_no_regulatory_impact()
+        when regulatory_implications == "MINOR":
+            require verify_compliance_approval()
+            action document_regulatory_considerations()
+        when regulatory_implications == "SIGNIFICANT":
+            require verify_board_approval()
+            require verify_compliance_approval()
+            action document_regulatory_risk_acceptance()
+        when regulatory_implications == "PROHIBITED":
+            action reject_waiver()
+        evidence risk_acceptance_memo
+        certify hashable
+
+    phase certification:
+        require risk_acceptance.passed
+        await waiver_executed
+        require require_policy_pass("indemnification_waiver")
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        evidence indemnification_waiver_certificate
+        certify immutable
+
+situations:
+    when contract_value > 10000000:
+        require verify_board_approval()
+        require verify_cfo_approval()
+
+    when coverage_gap_percentage > 50:
+        require verify_board_approval()
+        require verify_cfo_approval()
+
+    when counterparty_relationship == "STRATEGIC":
+        require verify_executive_approval()
+
+roles:
+    contract_counsel:
+        actions: [create_workflow_run, define_waiver_scope, document_scope_limitations, document_partial_waiver_scope]
+        requires_mfa: true
+
+    risk_management:
+        actions: [quantify_exposure, review_claims_history, document_exposure_analysis, document_claims_history, request_external_assessment]
+        requires_mfa: true
+
+    credit_analyst:
+        actions: [assess_counterparty, document_counterparty_acceptable, document_counterparty_considerations, document_collectability_assessment]
+        requires_mfa: true
+
+    insurance_broker:
+        actions: [confirm_insurance, document_coverage_confirmation, document_coverage_gap, request_insurance_opinion]
+        requires_mfa: true
+
+    business_owner:
+        actions: [document_justification, document_disproportionate_risk_acceptance]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [lock_criteria, obtain_risk_acceptance, emit_certificate, record_attestation, complete_specialized_review, document_complete_waiver_rationale]
+        requires_mfa: true
+        break_glass: true
+
+    cfo:
+        actions: [schedule_board_review, document_high_exposure_justification, document_uninsured_risk_acceptance]
+        requires_mfa: true
+
+    ciso:
+        actions: [request_security_review]
+        requires_mfa: true
+
+    compliance_officer:
+        actions: [request_compliance_review, document_regulatory_considerations, document_regulatory_risk_acceptance]
+        requires_mfa: true
+
+    ip_counsel:
+        actions: [request_ip_counsel_review]
+        requires_mfa: true
+
+    environmental_counsel:
+        actions: [request_environmental_review]
+        requires_mfa: true

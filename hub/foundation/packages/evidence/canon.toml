@@ -1,0 +1,87 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "evidence"
+version = "2026.01"
+description = "Evidence creation, chaining, sealing, custody verification, integrity, and timeline."
+
+[package.regulatory]
+basis = [
+    "FRE 901",
+    "ISO 27037",
+    "FCRA Section 1681m",
+    "SOX Section 802",
+]
+
+[phrases]
+require = [
+    "require_cep_hash_match",
+    "require_chain_of_custody_complete",
+    "require_evidence_not_superseded",
+    "require_evidence_present",
+]
+
+verify = [
+    "verify_cep_reference",
+    "verify_cep_sealed",
+    "verify_cep_not_expired",
+    "verify_evidence_integrity",
+    "verify_evidence_chain",
+    "verify_case_integrity",
+    "verify_chain",
+    "verify_chain_of_custody_complete",
+]
+
+action = [
+    "chain_evidence",
+    "create_genesis_entry",
+    "emit_chained_evidence",
+    "lock_evidence_chain",
+    "create_cep",
+    "seal_cep",
+    "save_evidence",
+    "supersede_evidence",
+    "compute_evidence_hash",
+    "get_case_evidence",
+    "get_case_history",
+    "get_evidence_timeline",
+]
+
+[schemas]
+types = [
+    "CEP",
+    "CEPStatus",
+    "CEPType",
+    "ChainEventType",
+    "CustodyChainStatus",
+    "TimelineEntry",
+    "TimelineEvent",
+    "ChainEvidenceSpecs",
+    "ComputeEvidenceHashSpecs",
+    "CreateCEPSpecs",
+    "EmitChainedEvidenceSpecs",
+    "CreateGenesisEntrySpecs",
+    "GetCaseEvidenceSpecs",
+    "GetCaseHistorySpecs",
+    "GetEvidenceTimelineSpecs",
+    "LockEvidenceChainSpecs",
+    "RequireChainOfCustodyCompleteSpecs",
+    "RequireCEPHashMatchSpecs",
+    "RequireEvidenceNotSupersededSpecs",
+    "RequireEvidencePresentSpecs",
+    "SaveEvidenceSpecs",
+    "SealCEPSpecs",
+    "SupersedeEvidenceSpecs",
+    "VerifyCaseIntegritySpecs",
+    "VerifyCEPNotExpiredSpecs",
+    "VerifyCEPReferenceSpecs",
+    "VerifyCEPSealedSpecs",
+    "VerifyChainOfCustodyCompleteSpecs",
+    "VerifyChainSpecs",
+    "VerifyEvidenceChainSpecs",
+    "VerifyEvidenceIntegritySpecs",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

@@ -1,0 +1,162 @@
+charter "Override Export Control Restriction" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.export_control_override
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow export_control_override:
+    phase eligibility:
+        await request_submitted
+        require verify_ofac_clearance()
+        require destination_must_not_be_prohibited()
+        require validate_destination_country()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase classification_review:
+        require eligibility.passed
+        require verify_ofac_clearance()
+        require verify_itar_authorization()
+        action verify_classification()
+        evidence compliance_assessment
+        output ClassificationResult
+        certify hashable
+
+    phase license_determination:
+        require classification_review.passed
+        require bis_license_must_be_valid()
+        action determine_license_requirement()
+        evidence license_determination
+        output LicenseStatus
+
+    phase exception_analysis:
+        require license_determination.passed
+        require verify_approval_chain_complete()
+        action analyze_license_exception()
+        evidence exception_analysis
+        output ExceptionStatus
+
+    phase party_screening:
+        require exception_analysis.passed
+        require verify_ofac_clearance()
+        require check_enhanced_government_screening_complete()
+        action perform_party_screening()
+        evidence end_user_screen
+        output ScreeningResult
+
+    phase government_screening:
+        require party_screening.passed
+        require check_enhanced_government_screening_complete()
+        action perform_government_screening()
+        evidence government_screening_report
+        output GovernmentScreeningResult
+
+    phase country_validation:
+        require government_screening.passed
+        require validate_destination_country()
+        action validate_country()
+        evidence country_validation
+        output CountryValidation
+
+    phase business_necessity:
+        require country_validation.passed
+        require require_access_justification()
+        action document_business_necessity()
+        evidence business_necessity
+        output BusinessNecessity
+
+    phase counsel_approval:
+        require business_necessity.passed
+        await approval_granted
+        require verify_gc_approval()
+        action collect_counsel_signoff()
+        evidence counsel_signoff
+        output CounselApproval
+
+    phase eco_approval:
+        require counsel_approval.passed
+        require verify_approval_chain_complete()
+        action collect_eco_approval()
+        evidence eco_approval
+        output ECOApproval
+
+    phase policy:
+        require eco_approval.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence export_override_certificate
+        output DecisionCertificate
+
+situations:
+    when license_exception_claimed == "YES":
+        require verify_itar_authorization()
+
+    when restriction_type == "SDN_LIST":
+        require verify_ofac_clearance()
+        require ofac_must_be_cleared()
+
+    when restriction_type == "ENTITY_LIST":
+        require verify_bis_approval()
+        require bis_license_must_be_valid()
+
+    when item_classification == "USML_CONTROLLED":
+        require itar_must_be_authorized()
+
+    when end_use_category == "MILITARY":
+        require check_military_end_use_license_obtained()
+
+    when destination_party_type == "GOVERNMENT":
+        require check_enhanced_government_screening_complete()
+
+    when export_subject_type == "SOURCE_CODE":
+        require verify_executive_approval()
+
+    when export_subject_type == "TECHNICAL_DATA":
+        require verify_executive_approval()
+
+roles:
+    export_requestor:
+        actions: [check_eligibility, document_business_necessity]
+        requires_mfa: true
+
+    trade_compliance_analyst:
+        actions: [verify_classification, determine_license_requirement, analyze_license_exception, perform_party_screening, validate_country]
+        requires_mfa: true
+
+    export_control_officer:
+        actions: [perform_government_screening, collect_eco_approval, emit_certificate]
+        requires_mfa: true
+
+    export_counsel:
+        actions: [collect_counsel_signoff]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [collect_counsel_signoff, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    ceo:
+        actions: [collect_eco_approval, emit_certificate]
+        requires_mfa: true
+        break_glass: true

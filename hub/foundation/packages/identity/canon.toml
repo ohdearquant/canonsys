@@ -1,0 +1,39 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "identity"
+version = "2026.01"
+description = "Identity assurance, authentication posture, IdP attestation, and scope risk assessment."
+
+[package.regulatory]
+basis = [
+    "NIST SP 800-63B",
+]
+
+[phrases]
+require = [
+    "require_strong_auth",
+]
+
+verify = [
+    "verify_assurance_equivalent",
+    "verify_idp_posture_attestation",
+    "verify_request_source_authenticated",
+    "verify_strong_auth_posture",
+]
+
+action = [
+    "assess_scope_risk_level",
+    "get_ca_level",
+]
+
+[schemas]
+types = [
+    "AALLevel",
+    "AuthPosture",
+    "RiskLevel",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

@@ -1,0 +1,144 @@
+charter "CS-072 Model Deployment Override" v1.0
+
+schemas: canon.ai@2026.01
+
+packages:
+    - ai_governance
+    - authorization
+    - certification
+    - evidence
+    - policy
+
+policies:
+    - ai.model_deployment_override
+
+triggers:
+    model_submitted
+    review_completed
+    deployment_requested
+
+workflow cs_072_model_deployment_override:
+    phase eligibility:
+        await model_submitted
+        require require_bias_assessment_documented()
+        require require_human_review_present()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_bias_assessment_documented()
+        require verify_human_review_complete()
+        action submit_facts()
+        action verify_model_purpose()
+        evidence facts_packet
+
+    phase risk_documentation:
+        require facts.passed
+        await review_completed
+        require require_bias_assessment_documented()
+        action submit_risk_assessment()
+        action verify_risk_assessment_signed()
+        evidence risk_assessment_report
+        certify hashable
+
+    phase rollback_verification:
+        require risk_documentation.passed
+        require verify_chain_of_custody_complete()
+        action execute_rollback_test()
+        action verify_rollback_time()
+        evidence rollback_test_results
+        certify hashable
+
+    phase monitoring_setup:
+        require rollback_verification.passed
+        require verify_approval_chain_complete()
+        action configure_monitoring()
+        action verify_alerting_thresholds()
+        evidence monitoring_configuration
+
+    phase approval_collection:
+        require monitoring_setup.passed
+        await deployment_requested
+        require verify_executive_approval()
+        require verify_approval_chain_complete()
+        action collect_approvals()
+        action verify_deployment_schedule()
+        evidence approval_packet
+        certify immutable
+
+    phase policy:
+        require approval_collection.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        action emit_certificate()
+        certify immutable
+        evidence model_deployment_certificate
+
+situations:
+    when risk_tier == "UNKNOWN":
+        require require_human_review_present()
+
+    when risk_tier == "UNACCEPTABLE":
+        require require_human_review_for_high_risk()
+
+    when risk_tier == "HIGH":
+        require require_bias_assessment_documented()
+        require verify_gc_approval()
+
+    when model_purpose == "HIRING_SCREENING":
+        require require_bias_assessment_documented()
+        require require_human_review_present()
+
+    when model_purpose == "CREDIT_SCORING":
+        require require_bias_assessment_documented()
+        require require_human_review_present()
+
+    when urgency_justification == "UNKNOWN":
+        require require_human_review_present()
+
+    when urgency_justification == "COMPETITIVE_PRESSURE":
+        require require_human_review_for_high_risk()
+
+    when urgency_justification == "CRITICAL_OUTAGE":
+        require verify_case_integrity()
+
+    when exposure_scope == "GENERAL_AVAILABILITY":
+        require require_bias_assessment_documented()
+        require verify_gc_approval()
+
+    when exposure_scope == "UNKNOWN":
+        require require_human_review_present()
+
+    when rollback_plan_present == "UNKNOWN":
+        require verify_chain_of_custody_complete()
+
+    when monitoring_enabled == "UNKNOWN":
+        require verify_approval_chain_complete()
+
+    when prior_override_expired == "YES":
+        require verify_bias_assessment_complete()
+
+roles:
+    head_of_ai:
+        actions: [check_eligibility, submit_facts, submit_risk_assessment, configure_monitoring, collect_approvals, emit_certificate]
+        requires_mfa: true
+
+    ml_engineer:
+        actions: [verify_model_purpose, execute_rollback_test, verify_rollback_time, verify_alerting_thresholds]
+        requires_mfa: true
+
+    ciso:
+        actions: [verify_risk_assessment_signed, collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    general_counsel:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true

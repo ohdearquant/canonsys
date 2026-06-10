@@ -1,0 +1,42 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "corporate"
+version = "2026.01"
+description = "M&A compliance: clean team requirements, carve-out readiness, condition satisfaction, and findings."
+
+[package.regulatory]
+basis = [
+    "Hart-Scott-Rodino Act",
+    "Sherman Act \u00a7 1",
+    "FTC/DOJ Merger Guidelines",
+    "SEC M&A disclosure rules",
+]
+
+[phrases]
+derive = [
+    "derive_carve_out_readiness",
+    "derive_clean_team_required",
+    "derive_condition_satisfaction_status",
+    "derive_conditional_findings_addressed",
+]
+
+[schemas]
+types = [
+    "CarveOutReadinessResult",
+    "CarveOutStatus",
+    "CleanTeamReason",
+    "CleanTeamRequiredResult",
+    "ConditionalFindingsAddressedResult",
+    "ConditionSatisfactionResult",
+    "ConditionSatisfactionStatus",
+    "ConditionType",
+    "DataSensitivityLevel",
+    "DealPhase",
+    "FindingStatus",
+    "SensitiveDataCategory",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

@@ -1,0 +1,36 @@
+[domain]
+name = "governance"
+description = "Regulatory compliance, data protection, AI governance, and legal"
+version = "2026.01"
+
+packages = [
+    "ai_governance",
+    "data_protection",
+    "notice",
+    "legal",
+    "export_control",
+    "incident",
+]
+
+charters = [
+    "fcra_adverse_action.canon",
+    "cep.canon",
+    "executive_override.canon",
+]
+
+router_modules = [
+    "canon_web.routers.governance.compliance",
+    "canon_web.routers.governance.documents",
+    "canon_web.routers.governance.dsr",
+    "canon_web.routers.governance.public_consent",
+]
+
+regulatory_basis = [
+    "FCRA 1681b-1681t",
+    "GDPR Art. 32-34",
+    "EU AI Act",
+    "ITAR/EAR",
+    "HIPAA",
+]
+
+dependencies = []

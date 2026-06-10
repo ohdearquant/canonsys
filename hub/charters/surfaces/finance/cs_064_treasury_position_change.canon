@@ -1,0 +1,200 @@
+charter "Treasury Position Change Authorization" v1.0
+
+# CS-064 - FINANCE Domain - TREASURY_POSITION Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: SOX 302/404, Board Investment Policy, Dodd-Frank (if applicable)
+
+packages:
+    - authorization
+    - certification
+    - core
+    - evidence
+    - freshness
+    - identity
+    - justification
+    - pattern
+    - policy
+    - workflow
+
+triggers:
+    position_change_requested
+    policy_analysis_completed
+    risk_analysis_completed
+    counterparty_verified
+    executive_approved
+    position_executed
+
+workflow treasury_position_change:
+    phase request_intake:
+        await position_change_requested
+        require verify_request_source_authenticated()
+        action derive_amount_band()
+        action create_workflow_run()
+        action save_evidence()
+        when amount_band == "SIGNIFICANT":
+            require require_dual_approval()
+        evidence position_request_record
+
+    phase policy_analysis:
+        require request_intake.passed
+        action validate_business_justification()
+        action record_workflow_step()
+        await policy_analysis_completed
+        when policy_compliance_status == "NON_COMPLIANT":
+            require require_type_specific_evidence()
+        when policy_compliance_status == "EXCEPTION_REQUIRED":
+            require verify_cfo_approval()
+        evidence policy_analysis_record
+        certify hashable
+
+    phase board_policy_deviation:
+        require policy_analysis.passed
+        action record_workflow_step()
+        when board_policy_deviation_status == "MATERIAL":
+            require verify_board_approval()
+        when board_policy_deviation_status == "MINOR":
+            require require_type_specific_evidence()
+        evidence board_policy_record
+
+    phase risk_analysis:
+        require board_policy_deviation.passed
+        action derive_risk_tier()
+        action record_workflow_step()
+        await risk_analysis_completed
+        when risk_limit_status == "EXCEEDS_LIMITS":
+            require verify_cfo_approval()
+        when risk_limit_status == "APPROACHING_LIMITS":
+            require require_access_justification()
+        evidence risk_analysis_record
+
+    phase limit_proximity_check:
+        require risk_analysis.passed
+        action record_workflow_step()
+        when limit_breach_proximity == "WARNING":
+            require require_access_justification()
+        when limit_breach_proximity == "CRITICAL":
+            require verify_cfo_approval()
+        evidence limit_proximity_record
+
+    phase counterparty_review:
+        require limit_proximity_check.passed
+        action record_workflow_step()
+        await counterparty_verified
+        when counterparty_exposure_status == "CONCENTRATED":
+            require require_access_justification()
+        when counterparty_exposure_status == "EXCEEDS_LIMITS":
+            require verify_cfo_approval()
+        evidence counterparty_review_record
+
+    phase liquidity_analysis:
+        require counterparty_review.passed
+        action record_workflow_step()
+        when liquidity_impact_status == "MAJOR_IMPACT":
+            require verify_cfo_approval()
+        evidence liquidity_analysis_record
+
+    phase hedge_effectiveness:
+        require liquidity_analysis.passed
+        action record_workflow_step()
+        when hedge_effectiveness_status == "INEFFECTIVE":
+            require require_type_specific_evidence()
+        evidence hedge_effectiveness_record
+
+    phase prior_change_analysis:
+        require hedge_effectiveness.passed
+        action derive_prior_action_count()
+        action check_pattern_threshold()
+        evidence prior_change_record
+
+    phase executive_approval:
+        require prior_change_analysis.passed
+        require verify_approval_chain_complete()
+        await executive_approved
+        evidence executive_approval_record
+
+    phase evidence_binding:
+        require executive_approval.passed
+        require require_evidence_present()
+        action chain_evidence()
+        action verify_evidence_freshness()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass("treasury_position_change")
+        require require_sox_compliance_review()
+        action evaluate_policy()
+        evidence policy_evaluation_record
+
+    phase certification:
+        require policy_evaluation.passed
+        await position_executed
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        certify immutable
+        evidence treasury_position_change_certificate
+
+situations:
+    when policy_compliance_status == "NON_COMPLIANT":
+        require require_type_specific_evidence()
+
+    when policy_compliance_status == "EXCEPTION_REQUIRED":
+        require verify_cfo_approval()
+
+    when risk_limit_status == "EXCEEDS_LIMITS":
+        require verify_cfo_approval()
+
+    when risk_limit_status == "APPROACHING_LIMITS":
+        require require_access_justification()
+
+    when counterparty_exposure_status == "CONCENTRATED":
+        require require_access_justification()
+
+    when counterparty_exposure_status == "EXCEEDS_LIMITS":
+        require verify_cfo_approval()
+
+    when liquidity_impact_status == "MAJOR_IMPACT":
+        require verify_cfo_approval()
+
+    when board_policy_deviation_status == "MATERIAL":
+        require verify_board_approval()
+
+    when board_policy_deviation_status == "MINOR":
+        require require_type_specific_evidence()
+
+    when amount_band == "SIGNIFICANT":
+        require require_dual_approval()
+
+    when limit_breach_proximity == "WARNING":
+        require require_access_justification()
+
+    when limit_breach_proximity == "CRITICAL":
+        require verify_cfo_approval()
+
+    when hedge_effectiveness_status == "INEFFECTIVE":
+        require require_type_specific_evidence()
+
+roles:
+    treasury_analyst:
+        actions: [save_evidence, create_workflow_run, record_workflow_step]
+        requires_mfa: true
+
+    risk_analyst:
+        actions: [record_workflow_step]
+        requires_mfa: true
+
+    treasurer:
+        actions: [record_workflow_step, chain_evidence]
+        requires_mfa: true
+
+    controller:
+        actions: [evaluate_policy]
+        requires_mfa: true
+
+    cfo:
+        actions: [emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true

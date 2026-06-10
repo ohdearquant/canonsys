@@ -1,0 +1,65 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "certification"
+version = "2026.01"
+description = "Decision certificates, FCRA notices, termination certification, and attestations."
+
+[package.regulatory]
+basis = [
+    "FCRA \u00a7 1681m",
+    "SOX \u00a7 302",
+    "Employment law",
+]
+
+[phrases]
+action = [
+    "record_attestation",
+    "build_certificate_summary",
+    "certify_fcra_notice",
+    "certify_termination",
+    "check_certificate_exists",
+    "emit_certificate",
+    "mint_certificate",
+    "request_timestamp_attestation",
+    "revoke_certificate",
+    "sign_certificate",
+    "supersede_certificate",
+    "verify_certificate_integrity",
+]
+
+[schemas]
+types = [
+    "AttestationMethod",
+    "AttestationType",
+    "CertificateClass",
+    "CertificateStatus",
+    "DecisionCertificate",
+    "DecisionCertificateContent",
+    "DefensibilityState",
+    "InputFingerprint",
+    "IntegrityVerification",
+    "ModelIdentity",
+    "ProceduralIntegrity",
+    "ReviewBehavior",
+    "CertificationEvent",
+    "SignerRole",
+    "TerminationType",
+    "WorkflowType",
+    "BuildCertificateSummarySpecs",
+    "CertifyFcraNoticeSpecs",
+    "CertifyTerminationSpecs",
+    "CheckCertificateExistsSpecs",
+    "EmitCertificateSpecs",
+    "MintCertificateSpecs",
+    "RecordAttestationSpecs",
+    "RequestTimestampAttestationSpecs",
+    "RevokeCertificateSpecs",
+    "SignCertificateSpecs",
+    "SupersedeCertificateSpecs",
+    "VerifyCertificateIntegritySpecs",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

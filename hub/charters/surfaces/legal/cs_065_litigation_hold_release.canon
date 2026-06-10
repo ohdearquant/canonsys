@@ -1,0 +1,164 @@
+charter "Litigation Hold Release" v1.0
+
+packages:
+    - legal
+    - authorization
+    - certification
+    - evidence
+    - policy
+    - workflow
+
+triggers:
+    release_requested
+    litigation_resolved
+    appeal_period_expired
+    related_matters_cleared
+    cooldown_elapsed
+    counsel_authorized
+    release_executed
+
+workflow litigation_hold_release:
+    phase eligibility:
+        await release_requested
+        require require_legal_review_complete()
+        require verify_privileged_review_complete()
+        action create_workflow_run()
+        action verify_hold_exists()
+        evidence eligibility_record
+
+    phase litigation_status:
+        require eligibility.passed
+        await litigation_resolved
+        require require_proceedings_closed()
+        action verify_litigation_status()
+        action chain_evidence()
+        when matter_type == "CLASS_ACTION":
+            require verify_gc_approval()
+            require require_legal_review_complete()
+        when matter_type == "CRIMINAL":
+            require verify_board_approval()
+            require verify_gc_approval()
+        evidence litigation_status_record
+        certify hashable
+
+    phase appeal_verification:
+        require litigation_status.passed
+        await appeal_period_expired
+        require require_appeal_exhausted()
+        require verify_appeal_channel_available()
+        action verify_appeal_window_elapsed()
+        when jurisdiction == "FEDERAL_US":
+            require require_legal_review_complete()
+            action verify_federal_appeal_period()
+        when jurisdiction == "STATE":
+            require require_legal_review_complete()
+            action verify_state_appeal_period()
+        evidence appeal_verification_record
+
+    phase related_matters_analysis:
+        require appeal_verification.passed
+        await related_matters_cleared
+        action analyze_related_matters()
+        action record_workflow_step()
+        when related_matter_count > 0:
+            require require_legal_review_complete()
+            action document_matter_relationships()
+        evidence matter_relationship_record
+
+    phase cooldown_period:
+        require related_matters_analysis.passed
+        await cooldown_elapsed
+        action verify_cooldown_period()
+        action save_evidence()
+        when matter_risk_tier == "HIGH_EXPOSURE":
+            require verify_gc_approval()
+            action document_extended_cooldown()
+        when matter_risk_tier == "EXISTENTIAL":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action document_existential_cooldown()
+        evidence cooldown_verification_record
+
+    phase counsel_authorization:
+        require cooldown_period.passed
+        await counsel_authorized
+        require verify_gc_approval()
+        require require_legal_review_complete()
+        action request_counsel_memo()
+        action lock_criteria()
+        evidence counsel_authorization_memo
+        certify hashable
+
+    phase release_manifest:
+        require counsel_authorization.passed
+        require verify_privileged_review_complete()
+        action prepare_release_manifest()
+        action verify_custodian_scope()
+        when release_type == "PARTIAL":
+            require require_dual_approval()
+            action document_partial_scope()
+        when release_type == "STAGED":
+            require verify_gc_approval()
+            action document_release_sequence()
+        evidence release_manifest
+        certify hashable
+
+    phase certification:
+        require release_manifest.passed
+        await release_executed
+        require require_policy_pass("litigation_hold_release")
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        evidence hold_release_certificate
+        certify immutable
+
+situations:
+    when jurisdiction == "SEC":
+        require require_legal_review_complete()
+        waiting_period 365..730 days
+
+    when jurisdiction == "DOJ":
+        require verify_gc_approval()
+        require verify_board_approval()
+        waiting_period 365..730 days
+
+    when jurisdiction == "FEDERAL_US":
+        waiting_period 60..90 days
+
+    when jurisdiction == "STATE":
+        waiting_period 30..60 days
+
+    when matter_risk_tier == "HIGH_EXPOSURE":
+        waiting_period 90..180 days
+
+    when matter_risk_tier == "EXISTENTIAL":
+        require verify_board_approval()
+        waiting_period 180..365 days
+
+    when data_destruction_planned == true:
+        require verify_board_approval()
+        require require_dual_approval()
+
+roles:
+    legal_ops:
+        actions: [create_workflow_run, verify_hold_exists, verify_cooldown_period, verify_custodian_scope]
+        requires_mfa: true
+
+    litigation_counsel:
+        actions: [verify_litigation_status, analyze_related_matters, request_counsel_memo, prepare_release_manifest, document_extended_cooldown, document_existential_cooldown]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [lock_criteria, document_release_sequence, emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true
+
+    external_counsel:
+        actions: [verify_appeal_window_elapsed, verify_federal_appeal_period, verify_state_appeal_period]
+        requires_mfa: true
+
+    records_manager:
+        actions: [document_partial_scope, document_matter_relationships]
+        requires_mfa: true

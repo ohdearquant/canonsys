@@ -1,0 +1,235 @@
+charter "IP Assignment" v1.0
+
+packages:
+    - legal
+    - authorization
+    - certification
+    - evidence
+    - policy
+    - workflow
+
+triggers:
+    assignment_requested
+    ip_identified
+    title_verified
+    valuation_completed
+    assignee_cleared
+    assignment_executed
+
+workflow ip_assignment:
+    phase initiation:
+        await assignment_requested
+        require require_legal_review_complete()
+        require require_nda_valid("ip_transaction")
+        action create_workflow_run()
+        action lock_criteria()
+        evidence assignment_initiation_record
+
+    phase ip_identification:
+        require initiation.passed
+        await ip_identified
+        action identify_ip()
+        action chain_evidence()
+        when ip_type == "PATENT":
+            require require_legal_review_complete()
+            action verify_patent_status()
+        when ip_type == "TRADEMARK":
+            require require_legal_review_complete()
+            action verify_trademark_status()
+        when ip_type == "COPYRIGHT":
+            action verify_copyright_status()
+        when ip_type == "TRADE_SECRET":
+            require verify_gc_approval()
+            require require_clean_team_for_competitive_intel()
+            action document_trade_secret_controls()
+        when ip_type == "KNOW_HOW":
+            require verify_cto_approval()
+            require require_nda_valid("know_how_transfer")
+            action document_know_how_scope()
+        evidence ip_inventory
+        certify hashable
+
+    phase title_verification:
+        require ip_identification.passed
+        await title_verified
+        require verify_privileged_review_complete()
+        action verify_title()
+        action record_workflow_step()
+        when chain_of_title == "CLEAR":
+            action document_clear_title()
+        when chain_of_title == "MINOR_ISSUES":
+            require require_legal_review_complete()
+            action document_title_issues()
+        when chain_of_title == "SIGNIFICANT_ISSUES":
+            require verify_gc_approval()
+            action document_title_remediation()
+        when chain_of_title == "DISPUTED":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action document_title_dispute_resolution()
+        evidence title_opinion
+        certify hashable
+
+    phase valuation:
+        require title_verification.passed
+        await valuation_completed
+        action value_ip()
+        action save_evidence()
+        when value_confidence == "HIGH":
+            action document_valuation_basis()
+        when value_confidence == "MODERATE":
+            action document_valuation_methodology()
+        when value_confidence == "LOW":
+            require verify_cfo_approval()
+            action request_external_valuation()
+        when estimated_value == "HIGH":
+            require verify_executive_approval()
+            require verify_cfo_approval()
+            action document_high_value_justification()
+        when estimated_value == "BOARD_LEVEL":
+            require verify_board_approval()
+            require verify_cfo_approval()
+            action schedule_board_approval()
+        evidence ip_valuation_report
+
+    phase strategic_classification:
+        require valuation.passed
+        require require_legal_review_complete()
+        action classify_strategic()
+        action chain_evidence()
+        when strategic_classification == "NON_CORE":
+            action document_non_core_classification()
+        when strategic_classification == "SUPPORTING":
+            require verify_cto_approval()
+            action document_supporting_classification()
+        when strategic_classification == "CORE":
+            require verify_executive_approval()
+            require verify_cto_approval()
+            action document_core_ip_assignment_rationale()
+        when strategic_classification == "CROWN_JEWEL":
+            require verify_board_approval()
+            require verify_executive_approval()
+            action document_crown_jewel_rationale()
+        evidence ip_strategy_memo
+
+    phase encumbrance_review:
+        require strategic_classification.passed
+        action search_encumbrances()
+        action record_workflow_step()
+        when existing_encumbrances == "NONE":
+            action document_clear_encumbrance()
+        when existing_encumbrances == "LICENSED":
+            require require_legal_review_complete()
+            action document_license_implications()
+        when existing_encumbrances == "PLEDGED_AS_COLLATERAL":
+            require verify_cfo_approval()
+            require verify_gc_approval()
+            action obtain_lender_consent()
+        when existing_encumbrances == "LITIGATION_PENDING":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action document_litigation_risk()
+        evidence encumbrance_search
+
+    phase covenant_analysis:
+        require encumbrance_review.passed
+        action analyze_covenants()
+        action chain_evidence()
+        when financing_covenant_impact == "NONE":
+            action document_no_covenant_impact()
+        when financing_covenant_impact == "NOTICE_REQUIRED":
+            action document_covenant_notification()
+        when financing_covenant_impact == "CONSENT_REQUIRED":
+            require verify_cfo_approval()
+            action obtain_lender_consent()
+        when financing_covenant_impact == "TRIGGERS_DEFAULT":
+            require verify_board_approval()
+            require verify_cfo_approval()
+            action obtain_lender_waiver()
+        evidence covenant_analysis
+
+    phase assignee_analysis:
+        require covenant_analysis.passed
+        action analyze_assignee_structure()
+        action save_evidence()
+        when assignee_type == "SUBSIDIARY":
+            action document_intercompany_transfer()
+        when assignee_type == "AFFILIATE":
+            require verify_gc_approval()
+            action document_affiliate_transfer()
+        when assignee_type == "THIRD_PARTY":
+            require verify_executive_approval()
+            action verify_assignee_creditworthiness()
+        when assignee_type == "COMPETITOR":
+            require verify_board_approval()
+            require verify_executive_approval()
+            action document_competitor_transfer_rationale()
+        when beneficial_owner_risk == "COMPETITOR_CONTROLLED":
+            require verify_board_approval()
+            action document_beneficial_owner_analysis()
+        evidence assignee_structure_analysis
+
+    phase assignment_document:
+        require assignee_analysis.passed
+        require verify_privileged_review_complete()
+        action prepare_assignment_agreement()
+        action verify_case_integrity()
+        evidence assignment_agreement
+        certify hashable
+
+    phase certification:
+        require assignment_document.passed
+        await assignment_executed
+        require require_policy_pass("ip_assignment")
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        evidence ip_assignment_certificate
+        certify immutable
+
+situations:
+    when consideration_type == "NOMINAL":
+        require verify_board_approval()
+        require verify_cfo_approval()
+
+    when core_product_dependency == "CRITICAL":
+        require verify_cto_approval()
+        require verify_executive_approval()
+
+    when competitive_sensitivity == "EXISTENTIAL":
+        require verify_board_approval()
+        require verify_executive_approval()
+
+    when export_control_applies == true:
+        require require_legal_review_complete()
+        require verify_gc_approval()
+
+roles:
+    ip_counsel:
+        actions: [create_workflow_run, identify_ip, verify_title, search_encumbrances, verify_patent_status, verify_trademark_status, verify_copyright_status, document_clear_title, document_title_issues]
+        requires_mfa: true
+
+    cto:
+        actions: [classify_strategic, document_trade_secret_controls, document_know_how_scope, document_core_ip_assignment_rationale]
+        requires_mfa: true
+
+    treasury:
+        actions: [analyze_covenants, obtain_lender_consent, obtain_lender_waiver, document_covenant_notification]
+        requires_mfa: true
+
+    business_development:
+        actions: [analyze_assignee_structure, verify_assignee_creditworthiness, document_intercompany_transfer, document_affiliate_transfer]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [lock_criteria, prepare_assignment_agreement, emit_certificate, record_attestation, document_crown_jewel_rationale, document_competitor_transfer_rationale]
+        requires_mfa: true
+        break_glass: true
+
+    external_valuator:
+        actions: [value_ip, request_external_valuation, document_valuation_basis, document_valuation_methodology]
+        requires_mfa: true
+
+    board_secretary:
+        actions: [schedule_board_approval, document_high_value_justification, document_beneficial_owner_analysis]
+        requires_mfa: true

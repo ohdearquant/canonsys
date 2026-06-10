@@ -1,0 +1,194 @@
+charter "Material Change Disclosure" v1.0
+
+schemas: canon.corporate@2026.01
+
+packages:
+    - corporate
+    - legal
+    - authorization
+    - certification
+    - evidence
+
+policies:
+    - corporate.material_change_disclosure
+
+triggers:
+    deal_initiated
+    diligence_completed
+    condition_met
+
+workflow material_change_disclosure:
+    phase eligibility:
+        await deal_initiated
+        require derive_condition_satisfaction_status()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase materiality_assessment:
+        require eligibility.passed
+        require derive_condition_satisfaction_status()
+        action assess_materiality()
+        evidence materiality_memo
+        output MaterialityMemo
+
+    phase impact_analysis:
+        require materiality_assessment.passed
+        require verify_approval_chain_complete()
+        action quantify_deal_impact()
+        evidence impact_analysis
+        output ImpactAnalysis
+
+    phase prior_disclosure_verification:
+        require impact_analysis.passed
+        require verify_chain_of_custody_complete()
+        action verify_no_prior_informal_disclosure()
+        evidence executive_attestation
+        output PriorDisclosureVerification
+
+    phase language_drafting:
+        require prior_disclosure_verification.passed
+        await diligence_completed
+        require verify_gc_approval()
+        action draft_disclosure_language()
+        evidence disclosure_draft
+        output DisclosureDraft
+
+    phase category_review:
+        require language_drafting.passed
+        require verify_approval_chain_complete()
+        action complete_category_review()
+        evidence category_approval
+        output CategoryApproval
+
+    phase committee_approval:
+        require category_review.passed
+        require verify_executive_approval()
+        action obtain_committee_approval()
+        evidence committee_approval
+        output CommitteeApproval
+
+    phase board_notification:
+        require committee_approval.passed
+        require verify_board_approval()
+        action notify_board()
+        evidence board_notification
+        output BoardNotification
+
+    phase evidence_binding:
+        require board_notification.passed
+        require chain_evidence()
+        action bind_evidence()
+        evidence evidence_packet
+        output EvidencePacket
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await condition_met
+        action emit_certificate()
+        certify immutable
+        evidence material_change_disclosure_certificate
+        output DecisionCertificate
+
+situations:
+    when change_severity == "MATERIAL":
+        require verify_board_approval()
+        require verify_gc_approval()
+
+    when change_severity == "CRITICAL":
+        require verify_board_approval()
+        require verify_gc_approval()
+        require verify_executive_approval()
+
+    when materiality_confidence_band == "LOW":
+        require verify_gc_approval()
+
+    when deal_value_impact_band == "MODERATE":
+        require derive_condition_satisfaction_status()
+
+    when deal_value_impact_band == "SIGNIFICANT":
+        require derive_condition_satisfaction_status()
+        require verify_executive_approval()
+
+    when deal_value_impact_band == "MATERIAL":
+        require derive_condition_satisfaction_status()
+        require verify_executive_approval()
+
+    when change_category == "FINANCIAL_RESTATEMENT":
+        require verify_cfo_approval()
+
+    when change_category == "LITIGATION":
+        require verify_gc_approval()
+
+    when change_category == "REGULATORY":
+        require verify_compliance_approval()
+
+    when change_category == "CYBERSECURITY":
+        require verify_ciso_approval()
+
+    when change_category == "ENVIRONMENTAL":
+        require verify_gc_approval()
+
+    when change_category == "EXECUTIVE_DEPARTURE":
+        require verify_hr_approval()
+
+    when disclosure_recipient == "PUBLIC":
+        require verify_executive_approval()
+        require verify_gc_approval()
+
+    when disclosure_recipient == "REGULATOR":
+        require verify_gc_approval()
+
+    when disclosure_method == "FORMAL_NOTICE":
+        require verify_approval_chain_complete()
+
+    when disclosure_method == "VERBAL_WITH_WRITTEN_CONFIRMATION":
+        require verify_approval_chain_complete()
+
+    when disclosure_method == "DISCLOSURE_SCHEDULE_AMENDMENT":
+        require verify_gc_approval()
+
+    when deal_stage == "BETWEEN_SIGN_AND_CLOSE":
+        require derive_condition_satisfaction_status()
+
+    when disclosure_freshness_exceeds_limit == "YES":
+        require verify_gc_approval()
+
+roles:
+    deal_team:
+        actions: [check_eligibility, quantify_deal_impact]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [assess_materiality, draft_disclosure_language, complete_category_review]
+        requires_mfa: true
+
+    compliance_officer:
+        actions: [verify_no_prior_informal_disclosure, complete_category_review]
+        requires_mfa: true
+
+    disclosure_committee:
+        actions: [obtain_committee_approval, notify_board]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [bind_evidence, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    cfo:
+        actions: [complete_category_review, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    ceo:
+        actions: [emit_certificate]
+        requires_mfa: true
+        break_glass: true

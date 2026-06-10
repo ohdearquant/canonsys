@@ -1,0 +1,194 @@
+charter "Biometric Enrollment Bypass" v1.0
+
+# CS-025 - IDENTITY Domain - OVERRIDE_EXCEPTION Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: NIST 800-63, ADA, GDPR
+
+packages:
+    - identity
+    - authorization
+    - certification
+    - core
+    - lifecycle
+    - pattern
+    - policy
+
+triggers:
+    requester_requests_bypass
+    identity_verified
+    alternative_configured
+    reenrollment_scheduled
+    bypass_granted
+    bypass_expires
+    biometric_restored
+
+workflow biometric_bypass:
+    phase request_submission:
+        await requester_requests_bypass
+        require require_subject_exists()
+        require require_biometric_currently_required()
+        require require_decision_not_certified()
+        require require_justification_present()
+        require require_bypass_reason_valid()
+        action submit_bypass_request()
+        action classify_bypass_risk()
+        when bypass_reason == "MEDICAL":
+            require require_medical_documentation_valid()
+        when bypass_reason == "ACCESSIBILITY":
+            require require_accessibility_accommodation_documented()
+        evidence bypass_request_record
+
+    phase identity_verification:
+        require request_submission.passed
+        await identity_verified
+        action verify_subject_identity()
+        action validate_verification_method()
+        when bypass_scope == "ALL_BIOMETRIC":
+            require require_security_reviewed()
+        when bypass_risk_class == "HIGH":
+            require require_security_reviewed()
+        evidence identity_verification_record
+        certify hashable
+
+    phase alternative_auth_configuration:
+        require identity_verification.passed
+        await alternative_configured
+        action configure_alternative_auth()
+        action verify_alternative_auth_active()
+        when alternative_auth == "PASSWORD_ONLY":
+            require require_alternative_auth_upgrade()
+        when alternative_auth == "SECURITY_QUESTIONS":
+            require require_non_prod_only()
+        when alternative_auth == "UNKNOWN":
+            require require_alternative_auth_clarification()
+        evidence alternative_auth_record
+
+    phase reenrollment_scheduling:
+        require alternative_auth_configuration.passed
+        await reenrollment_scheduled
+        action schedule_re_enrollment()
+        action verify_re_enrollment_scheduled()
+        when re_enrollment_scheduled == "UNKNOWN":
+            require require_re_enrollment_clarification()
+        when re_enrollment_scheduled == "NO":
+            require require_permanent_bypass_ciso_approval()
+        evidence re_enrollment_schedule_record
+        certify hashable
+
+    phase history_review:
+        require reenrollment_scheduling.passed
+        action query_bypass_history()
+        action derive_prior_action_count()
+        action check_repeat_bypass()
+        action check_reenrollment_status()
+        when repeat_bypass_detected == "true":
+            require require_repeat_bypass_escalation()
+        when prior_bypass_pending_reenrollment == "true":
+            require require_reenrollment_or_lockout()
+        evidence history_review_record
+
+    phase policy_evaluation:
+        require history_review.passed
+        require require_duration_bounded()
+        require require_duration_positive()
+        require require_alternative_auth_configured()
+        require require_re_enrollment_scheduled_if_applicable()
+        require require_repeat_bypass_not_detected()
+        require require_policy_pass("biometric_bypass")
+        action evaluate_bypass_policy()
+        when environment == "PROD":
+            require require_prod_duration_limit()
+        evidence policy_evaluation_record
+
+    phase grant:
+        require policy_evaluation.passed
+        await bypass_granted
+        action grant_biometric_bypass()
+        action schedule_auto_expire()
+        evidence bypass_grant_record
+
+    phase monitoring:
+        require grant.passed
+        action trigger_recertification()
+        action derive_prior_action_count()
+        evidence monitoring_record
+
+    phase closure:
+        require monitoring.passed
+        when closure_type == "AUTO":
+            await bypass_expires
+            action verify_biometric_restored()
+        when closure_type == "MANUAL":
+            await biometric_restored
+            action verify_bypass_revoked()
+        action compute_facts_hash()
+        action compute_evidence_hash()
+        action mint_bypass_certificate()
+        certify immutable
+        evidence biometric_bypass_certificate
+
+situations:
+    when environment == "PROD":
+        require require_prod_duration_limit()
+
+    when bypass_scope == "ALL_BIOMETRIC":
+        require require_security_reviewed()
+
+    when bypass_reason == "MEDICAL":
+        require require_medical_documentation_valid()
+
+    when bypass_reason == "ACCESSIBILITY":
+        require require_accessibility_accommodation_documented()
+
+    when alternative_auth == "PASSWORD_ONLY":
+        require require_alternative_auth_upgrade()
+
+    when alternative_auth == "SECURITY_QUESTIONS":
+        require require_non_prod_only()
+
+    when alternative_auth == "UNKNOWN":
+        require require_alternative_auth_clarification()
+
+    when re_enrollment_scheduled == "UNKNOWN":
+        require require_re_enrollment_clarification()
+
+    when re_enrollment_scheduled == "NO":
+        require require_permanent_bypass_ciso_approval()
+
+    when bypass_risk_class == "HIGH":
+        require require_security_reviewed()
+
+    when repeat_bypass_detected == "true":
+        require require_repeat_bypass_escalation()
+
+    when prior_bypass_pending_reenrollment == "true":
+        require require_reenrollment_or_lockout()
+
+roles:
+    identity_verifier:
+        actions: [verify_subject_identity, validate_verification_method]
+        requires_mfa: true
+
+    requester:
+        actions: [submit_bypass_request, classify_bypass_risk]
+        requires_mfa: true
+
+    it_admin:
+        actions: [configure_alternative_auth, verify_alternative_auth_active, schedule_re_enrollment, grant_biometric_bypass, schedule_auto_expire]
+        requires_mfa: true
+
+    manager:
+        actions: [verify_re_enrollment_scheduled]
+        requires_mfa: true
+
+    security_analyst:
+        actions: [query_bypass_history, check_repeat_bypass, check_reenrollment_status, derive_prior_action_count]
+        requires_mfa: true
+
+    security_lead:
+        actions: [evaluate_bypass_policy, mint_bypass_certificate]
+        requires_mfa: true
+
+    ciso:
+        actions: [mint_bypass_certificate]
+        break_glass: true

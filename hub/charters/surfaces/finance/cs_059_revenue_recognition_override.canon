@@ -1,0 +1,162 @@
+charter "Revenue Recognition Override Authorization" v1.0
+
+# CS-059 - FINANCE Domain - REVENUE_RECOGNITION Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: ASC 606, SOX 302/404, SEC Regulations
+
+packages:
+    - authorization
+    - certification
+    - core
+    - evidence
+    - freshness
+    - identity
+    - justification
+    - pattern
+    - policy
+    - workflow
+
+triggers:
+    override_requested
+    asc606_analysis_completed
+    controller_approved
+    escalation_approved
+    override_executed
+
+workflow revenue_recognition_override:
+    phase request_intake:
+        await override_requested
+        require verify_request_source_authenticated()
+        action derive_amount_band()
+        action create_workflow_run()
+        action save_evidence()
+        when override_direction == "ACCELERATE":
+            require require_access_justification()
+        evidence override_request_record
+
+    phase asc606_analysis:
+        require request_intake.passed
+        action validate_business_justification()
+        action record_workflow_step()
+        await asc606_analysis_completed
+        when asc606_criteria_status == "NOT_MET":
+            require require_type_specific_evidence()
+        when asc606_criteria_status == "PARTIAL":
+            require verify_executive_approval()
+        evidence asc606_analysis_record
+        certify hashable
+
+    phase sales_origin_check:
+        require asc606_analysis.passed
+        action derive_prior_action_count()
+        action check_pattern_threshold()
+        when sales_initiated_override == true:
+            require require_dual_approval()
+            require require_separation_of_duties()
+        evidence sales_origin_record
+
+    phase quarter_end_check:
+        require sales_origin_check.passed
+        action derive_quarter_end()
+        action record_workflow_step()
+        when quarter_end_proximity_near == true:
+            require verify_cfo_approval()
+            require require_dual_approval()
+        evidence quarter_end_record
+
+    phase controller_review:
+        require quarter_end_check.passed
+        require verify_executive_approval()
+        await controller_approved
+        when prior_overrides_contract_exceeds_threshold == true:
+            require verify_cfo_approval()
+        evidence controller_review_record
+
+    phase external_notification:
+        require controller_review.passed
+        action record_workflow_step()
+        when amount_band == "MATERIAL":
+            require verify_audit_complete()
+        when amount_band == "SIGNIFICANT":
+            require verify_audit_complete()
+            require verify_board_approval()
+        evidence external_notification_record
+
+    phase escalation_approval:
+        require external_notification.passed
+        require verify_approval_chain_complete()
+        await escalation_approved
+        evidence escalation_approval_record
+
+    phase evidence_binding:
+        require escalation_approval.passed
+        require require_evidence_present()
+        action chain_evidence()
+        action verify_evidence_freshness()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass("revenue_recognition_override")
+        require require_sox_compliance_review()
+        action evaluate_policy()
+        evidence policy_evaluation_record
+
+    phase certification:
+        require policy_evaluation.passed
+        await override_executed
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        certify immutable
+        evidence revenue_recognition_override_certificate
+
+situations:
+    when override_direction == "ACCELERATE":
+        require require_access_justification()
+
+    when quarter_end_proximity_near == true:
+        require verify_cfo_approval()
+        require require_dual_approval()
+
+    when sales_initiated_override == true:
+        require require_dual_approval()
+        require require_separation_of_duties()
+
+    when amount_band == "MATERIAL":
+        require verify_audit_complete()
+
+    when amount_band == "SIGNIFICANT":
+        require verify_audit_complete()
+        require verify_board_approval()
+
+    when prior_overrides_contract_exceeds_threshold == true:
+        require verify_cfo_approval()
+
+    when asc606_criteria_status == "NOT_MET":
+        require require_type_specific_evidence()
+
+roles:
+    revenue_analyst:
+        actions: [save_evidence, create_workflow_run, record_workflow_step]
+        requires_mfa: true
+
+    revenue_accountant:
+        actions: [validate_business_justification, record_workflow_step]
+        requires_mfa: true
+
+    controller:
+        actions: [chain_evidence, evaluate_policy]
+        requires_mfa: true
+
+    cfo:
+        actions: [emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true
+
+    audit_committee:
+        actions: [record_attestation]
+        requires_mfa: true
+        break_glass: true

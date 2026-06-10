@@ -1,0 +1,196 @@
+charter "Certificate Authority Trust" v1.0
+
+# CS-023 - IDENTITY Domain - PERMISSION_GRANT Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: CA/Browser Forum, FedRAMP, PCI-DSS
+
+packages:
+    - identity
+    - authorization
+    - certification
+    - core
+    - legal
+    - lifecycle
+    - pattern
+    - policy
+
+triggers:
+    requestor_requests_trust
+    certificate_analyzed
+    audit_verified
+    security_approves
+    legal_approves
+    trust_established
+    trust_recertified
+    trust_revoked
+
+workflow ca_trust:
+    phase request_submission:
+        await requestor_requests_trust
+        require require_requestor_authorized()
+        require require_decision_not_certified()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase certificate_analysis:
+        require request_submission.passed
+        await certificate_analyzed
+        action analyze_ca_certificate()
+        action extract_name_constraints()
+        action verify_constraint_profile()
+        when constraint_profile == "UNCONSTRAINED":
+            require require_security_reviewed()
+        when constraint_profile == "UNKNOWN":
+            require require_constraint_profile_clarification()
+        evidence certificate_analysis_record
+        certify hashable
+
+    phase audit_verification:
+        require certificate_analysis.passed
+        await audit_verified
+        action verify_audit_report()
+        action validate_audit_currency()
+        when ca_type == "PUBLIC_CA":
+            require require_ca_audited()
+        evidence audit_verification_record
+
+    phase security_review:
+        require audit_verification.passed
+        await security_approves
+        action request_security_review()
+        action verify_security_approval()
+        when trust_scope == "GLOBAL":
+            require require_security_reviewed()
+        when trust_purpose == "CODE_SIGNING":
+            require require_security_reviewed()
+        when trust_purpose == "ALL":
+            require require_ciso_override()
+        when trust_purpose == "UNKNOWN":
+            require require_trust_purpose_clarification()
+        evidence security_review_record
+
+    phase legal_review:
+        require security_review.passed
+        await legal_approves
+        action request_legal_review()
+        action verify_legal_approval()
+        when ca_type == "VENDOR_CA":
+            require require_legal_reviewed()
+        when ca_type == "PARTNER_CA":
+            require require_legal_reviewed()
+        evidence legal_agreement_record
+        certify hashable
+
+    phase revocation_planning:
+        require legal_review.passed
+        action document_revocation_procedure()
+        action verify_revocation_capability()
+        when environment == "PROD":
+            require require_environment_specific_or_tighter()
+        evidence revocation_plan_record
+
+    phase recertification_check:
+        require revocation_planning.passed
+        action query_trust_history()
+        action derive_prior_action_count()
+        action check_recertification_required()
+        when recertification_required == "true":
+            require require_fresh_security_review()
+        evidence recertification_record
+
+    phase policy_evaluation:
+        require recertification_check.passed
+        require require_validity_bounded()
+        require require_validity_positive()
+        require require_name_constraints_valid()
+        require require_revocation_plan_documented()
+        require require_policy_pass("ca_trust")
+        action evaluate_ca_trust_policy()
+        evidence policy_evaluation_record
+
+    phase trust_establishment:
+        require policy_evaluation.passed
+        await trust_established
+        action establish_ca_trust()
+        action schedule_recertification()
+        action compute_ca_fingerprint()
+        evidence trust_establishment_record
+
+    phase monitoring:
+        require trust_establishment.passed
+        action trigger_recertification()
+        action derive_prior_action_count()
+        evidence monitoring_record
+
+    phase closure:
+        require monitoring.passed
+        when closure_type == "RECERTIFICATION":
+            await trust_recertified
+            action verify_recertification_complete()
+        when closure_type == "REVOCATION":
+            await trust_revoked
+            action verify_trust_revoked()
+        action compute_facts_hash()
+        action compute_evidence_hash()
+        action mint_ca_trust_certificate()
+        certify immutable
+        evidence ca_trust_certificate
+
+situations:
+    when ca_type == "PUBLIC_CA":
+        require require_ca_audited()
+
+    when ca_type == "VENDOR_CA":
+        require require_legal_reviewed()
+
+    when ca_type == "PARTNER_CA":
+        require require_legal_reviewed()
+
+    when trust_scope == "GLOBAL":
+        require require_security_reviewed()
+
+    when trust_purpose == "CODE_SIGNING":
+        require require_security_reviewed()
+
+    when trust_purpose == "ALL":
+        require require_ciso_override()
+
+    when trust_purpose == "UNKNOWN":
+        require require_trust_purpose_clarification()
+
+    when constraint_profile == "UNCONSTRAINED":
+        require require_security_reviewed()
+
+    when constraint_profile == "UNKNOWN":
+        require require_constraint_profile_clarification()
+
+    when environment == "PROD":
+        require require_environment_specific_or_tighter()
+
+    when recertification_required == "true":
+        require require_fresh_security_review()
+
+roles:
+    requestor:
+        actions: [analyze_ca_certificate, document_revocation_procedure]
+        requires_mfa: true
+
+    pki_engineer:
+        actions: [extract_name_constraints, verify_constraint_profile, verify_revocation_capability, establish_ca_trust]
+        requires_mfa: true
+
+    security_analyst:
+        actions: [verify_audit_report, validate_audit_currency, query_trust_history, check_recertification_required, derive_prior_action_count]
+        requires_mfa: true
+
+    security_lead:
+        actions: [request_security_review, verify_security_approval, evaluate_ca_trust_policy, mint_ca_trust_certificate]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [request_legal_review, verify_legal_approval]
+        requires_mfa: true
+
+    ciso:
+        actions: [mint_ca_trust_certificate]
+        break_glass: true

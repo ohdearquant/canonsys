@@ -1,0 +1,60 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "consent"
+version = "2026.01"
+description = "Consent collection, verification, revocation, renewal, and audit history."
+
+[phrases]
+require = [
+    "require_active_consent",
+    "require_consent_not_expired",
+    "require_consent_not_withdrawn",
+    "require_valid_consent",
+]
+
+verify = [
+    "verify_consent_scope_covers",
+    "verify_consent_token",
+]
+
+action = [
+    "cascade_revoke_consent_token",
+    "find_consent_token",
+    "grant_consent_token",
+    "list_consent_tokens",
+    "renew_consent_token",
+    "revoke_consent_token",
+    "get_consent_history",
+    "consent_must_be_valid",
+    "consent_must_not_be_expired",
+    "consent_must_not_be_withdrawn",
+    "consent_scope_must_cover",
+]
+
+[schemas]
+types = [
+    "ConsentScope",
+    "ConsentStatus",
+    "ConsentToken",
+    "ConsentTokenContent",
+    "ConsentStatusFilter",
+    "ConsentHistoryEntry",
+    "CascadeRevokeSpecs",
+    "FindConsentSpecs",
+    "GetConsentHistorySpecs",
+    "GrantConsentSpecs",
+    "ListConsentSpecs",
+    "RenewConsentSpecs",
+    "RequireActiveConsentSpecs",
+    "RequireConsentNotExpiredSpecs",
+    "RequireConsentNotWithdrawnSpecs",
+    "RequireValidConsentSpecs",
+    "RevokeConsentSpecs",
+    "VerifyConsentScopeCoversSpecs",
+    "VerifyConsentSpecs",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

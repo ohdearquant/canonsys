@@ -1,0 +1,48 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "scope"
+version = "2026.01"
+description = "Scope management: destination and channel allowlists, dataset snapshots, group membership, and minimization."
+
+[phrases]
+require = [
+    "require_scope_valid",
+]
+
+verify = [
+    "verify_channel_allowed",
+    "verify_dataset_snapshot_match",
+    "verify_destination_allowed",
+    "verify_group_membership_snapshot",
+    "verify_scope_definition",
+    "verify_scope_manifest",
+    "verify_stakeholder_notification_complete",
+]
+
+derive = [
+    "derive_scope_minimization",
+]
+
+action = [
+    "check_environment_scope",
+    "create_scope_manifest",
+]
+
+[schemas]
+types = [
+    "ChannelAllowlistResult",
+    "DatasetSnapshotResult",
+    "DestinationAllowlistResult",
+    "EnvironmentScopeResult",
+    "GroupSnapshotResult",
+    "ManifestResult",
+    "ManifestVerificationResult",
+    "ScopeDefinitionResult",
+    "ScopeMinimizationResult",
+    "StakeholderNotificationResult",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

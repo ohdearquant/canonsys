@@ -1,0 +1,45 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "pattern"
+version = "2026.01"
+description = "Pattern detection for compliance monitoring: prior action counts, thresholds, and cumulative amount tracking."
+
+[package.regulatory]
+basis = [
+    "SOX \u00a7 404",
+    "SOC 2 CC4.1",
+    "BSA/AML",
+]
+
+[phrases]
+require = [
+    "require_no_adverse_pattern",
+]
+
+derive = [
+    "derive_cumulative_amount",
+    "derive_cumulative_exception_amount",
+    "derive_cumulative_reallocation_amount",
+    "derive_manager_bypass_count_12m",
+    "derive_manager_salary_exception_count_12m",
+    "derive_prior_action_count",
+]
+
+action = [
+    "check_pattern_threshold",
+    "check_prior_bypasses",
+    "check_prior_escalations",
+    "check_prior_exemptions",
+]
+
+[schemas]
+types = [
+    "CumulativeAmountResult",
+    "PatternThresholdResult",
+    "PriorActionCountResult",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

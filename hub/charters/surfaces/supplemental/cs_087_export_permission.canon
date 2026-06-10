@@ -1,0 +1,131 @@
+charter "Sensitive System Export Permission" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.export_permission
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow export_permission:
+    phase eligibility:
+        await request_submitted
+        require verify_ofac_clearance()
+        require require_allowed_destination()
+        require validate_destination_country()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase purpose_review:
+        require eligibility.passed
+        require require_access_justification()
+        action document_purpose()
+        evidence purpose_statement
+        output PurposePacket
+
+    phase classification_review:
+        require purpose_review.passed
+        require assess_control_coverage()
+        action verify_classification()
+        evidence classification_review
+        output ClassificationStatus
+        certify hashable
+
+    phase minimization_review:
+        require classification_review.passed
+        require verify_approval_chain_complete()
+        action verify_minimization()
+        evidence minimization_review
+        output MinimizationResult
+
+    phase data_owner_approval:
+        require minimization_review.passed
+        require verify_approval_chain_complete()
+        action collect_data_owner_approval()
+        evidence data_owner_approval
+        output DataOwnerApproval
+
+    phase security_review:
+        require data_owner_approval.passed
+        require verify_ciso_approval()
+        action perform_security_review()
+        evidence security_review
+        output SecurityAssessment
+
+    phase audit_setup:
+        require security_review.passed
+        await approval_granted
+        require verify_chain_of_custody_complete()
+        action configure_export_audit()
+        evidence audit_configuration
+        output AuditConfiguration
+
+    phase dpo_approval:
+        require audit_setup.passed
+        require verify_dpo_approval()
+        action collect_dpo_approval()
+        evidence dpo_approval
+        output DPOApproval
+
+    phase policy:
+        require dpo_approval.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence export_permission_certificate
+        output DecisionCertificate
+
+situations:
+    when data_classification == "CONFIDENTIAL":
+        require assess_control_coverage()
+
+    when data_classification == "RESTRICTED":
+        require assess_control_coverage()
+        require verify_dpo_approval()
+
+    when pii_present == "YES":
+        require verify_dpo_approval()
+
+    when export_scope == "FULL_DATABASE":
+        require verify_executive_approval()
+
+    when export_destination_type == "CLOUD_STORAGE":
+        require verify_ciso_approval()
+
+roles:
+    export_requestor:
+        actions: [check_eligibility, document_purpose]
+        requires_mfa: true
+
+    data_owner:
+        actions: [collect_data_owner_approval, verify_classification]
+        requires_mfa: true
+
+    security_lead:
+        actions: [perform_security_review, verify_minimization, configure_export_audit]
+        requires_mfa: true
+
+    dpo:
+        actions: [collect_dpo_approval]
+        requires_mfa: true
+
+    ciso:
+        actions: [perform_security_review, emit_certificate]
+        requires_mfa: true
+        break_glass: true

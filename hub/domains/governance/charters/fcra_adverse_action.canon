@@ -1,0 +1,107 @@
+charter "FCRA Pre-Adverse Action Compliance" v1.0
+
+packages:
+    - consent
+    - evidence
+    - certification
+    - timing
+    - legal
+    - policy
+
+triggers:
+    background_check_completed
+    pre_adverse_notice_sent
+    notice_wait_expired
+    candidate_files_dispute
+    dispute_resolved
+    final_decision_made
+
+workflow fcra_adverse_action:
+    phase consent_verification:
+        require require_active_consent("background_check")
+        require verify_consent_token("background_check")
+        action save_evidence()
+        evidence consent_verification_record
+
+    phase report_receipt:
+        require consent_verification.passed
+        await background_check_completed
+        action verify_cep_reference()
+        action chain_evidence()
+        evidence consumer_report_record
+
+    phase pre_adverse_notice:
+        require report_receipt.passed
+        action certify_fcra_notice()
+        action verify_notice_delivered()
+        when report_contains_criminal == true:
+            require require_legal_review_complete()
+            action review_individualized_assessment()
+        certify immutable
+        evidence pre_adverse_notice_record
+
+    phase notice_wait:
+        require pre_adverse_notice.passed
+        await pre_adverse_notice_sent
+        action check_notice_wait_elapsed()
+        evidence notice_wait_record
+
+    phase dispute_handling:
+        require notice_wait.passed
+        await notice_wait_expired
+        when dispute_status == "FILED":
+            await candidate_files_dispute
+            require require_legal_review_complete()
+            action investigate_dispute()
+            await dispute_resolved
+        when dispute_status == "NONE":
+            action record_no_dispute()
+        evidence dispute_record
+
+    phase final_decision:
+        require dispute_handling.passed
+        await final_decision_made
+        require require_policy_pass("fcra_adverse_action")
+        action verify_case_integrity()
+        action get_case_history()
+        when decision == "PROCEED_ADVERSE":
+            action certify_termination()
+            action build_certificate_summary()
+        when decision == "RESCIND":
+            action close_workflow_favorable()
+        certify immutable
+        evidence adverse_action_certificate
+
+situations:
+    when state == "California":
+        waiting_period 7..14 days
+        require require_active_consent("ca_disclosure")
+
+    when state == "New_York":
+        waiting_period 5..10 days
+        require require_active_consent("ny_disclosure")
+
+    when state == "Illinois":
+        waiting_period 5..7 days
+
+    when dispute_filed == true:
+        waiting_period 30..60 days
+        require require_legal_review_complete()
+
+roles:
+    recruiting_coordinator:
+        actions: [save_evidence, verify_notice_delivered, record_no_dispute]
+        requires_mfa: true
+
+    background_check_vendor:
+        actions: [verify_cep_reference]
+        requires_mfa: true
+
+    hr_compliance:
+        actions: [certify_fcra_notice, check_notice_wait_elapsed]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [review_individualized_assessment, investigate_dispute, certify_termination, build_certificate_summary]
+        break_glass: true
+        requires_mfa: true

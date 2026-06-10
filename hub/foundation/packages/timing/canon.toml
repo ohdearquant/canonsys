@@ -1,0 +1,46 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "timing"
+version = "2026.01"
+description = "Timing gates, business day computation, notice delivery, waiting period management, SLA verification, and timing constraint queries."
+
+[phrases]
+require = [
+    "require_deadline_not_passed",
+    "require_minimum_elapsed",
+]
+
+verify = [
+    "verify_notice_delivered",
+    "verify_sla_met",
+]
+
+action = [
+    "check_waiting_period_elapsed",
+    "get_waiting_period",
+    "pause_waiting_period",
+    "resume_waiting_period",
+    "get_acknowledgment",
+    "get_delivery_attempts",
+    "get_notice",
+    "compute_business_days",
+    "get_timing_constraints",
+]
+
+[schemas]
+types = [
+    "AcknowledgmentMethod",
+    "ConstraintType",
+    "DeliveryStatus",
+    "Jurisdiction",
+    "NoticeChannel",
+    "NoticeDeliveryStatus",
+    "NoticeType",
+    "SlaType",
+    "WaitingPeriodState",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

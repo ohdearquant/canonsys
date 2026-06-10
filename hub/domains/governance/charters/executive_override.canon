@@ -1,0 +1,67 @@
+charter "Executive Override Decision Certification" v1.0
+
+workflow executive_override:
+    phase scope_declaration:
+        action declare_override_scope()
+        action document_policy_deviation()
+        evidence scope_declaration_record
+
+    phase supporting_certificates:
+        require scope_declaration.passed
+        action verify_supporting_tdc_exists()
+        action verify_supporting_cep_integrity()
+        evidence supporting_certificates_record
+
+    phase authority_assertion:
+        require supporting_certificates.passed
+        require require_executive_authority()
+        action verify_issuer_role_executive()
+        action verify_delegation_chain()
+        evidence authority_assertion_record
+
+    phase risk_acceptance:
+        require authority_assertion.passed
+        require require_risk_acknowledgement()
+        action document_litigation_exposure()
+        action document_regulatory_exposure()
+        evidence risk_acceptance_record
+
+    phase legal_review:
+        require risk_acceptance.passed
+        require require_legal_review_complete()
+        action check_legal_review_freshness()
+        evidence legal_review_record
+
+    phase override_certification:
+        require legal_review.passed
+        action build_certificate_summary()
+        action certify_executive_override()
+        certify immutable
+        evidence executive_override_certificate
+
+situations:
+    when override_type == "terminate_without_pip":
+        require require_egregious_conduct_finding()
+        require require_investigation_closed()
+
+    when override_type == "skip_waiting_period":
+        require require_business_necessity_documented()
+
+    when override_type == "policy_exception":
+        require require_explicit_policy_reference()
+
+roles:
+    chro:
+        actions: [declare_override_scope, certify_executive_override]
+        requires_mfa: true
+        break_glass: true
+
+    general_counsel:
+        actions: [document_litigation_exposure, verify_delegation_chain]
+        requires_mfa: true
+        break_glass: true
+
+    ceo:
+        actions: [certify_executive_override, document_policy_deviation]
+        requires_mfa: true
+        break_glass: true

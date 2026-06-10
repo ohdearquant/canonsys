@@ -1,0 +1,58 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "policy"
+version = "2026.01"
+description = "Policy definition, adapter creation, release lifecycle, evaluation, resolution, conditional evaluation, and exception management."
+
+[package.regulatory]
+basis = [
+    "SOX \u00a7 404",
+    "SOC 2 CC1.1-1.4",
+    "ISO 27001 A.5.1",
+]
+
+[phrases]
+require = [
+    "require_policy_active",
+    "require_policy_pass",
+    "require_policy_version_current",
+]
+
+verify = [
+    "verify_policy_not_overridden",
+]
+
+derive = [
+    "derive_risk_tier",
+]
+
+action = [
+    "create_policy_adapter",
+    "create_policy_definition",
+    "create_policy_release",
+    "evaluate_conditional_policy",
+    "evaluate_policy",
+    "get_applicable_policies",
+    "publish_policy_release",
+    "resolve_policy",
+]
+
+[schemas]
+types = [
+    "PolicyAdapter",
+    "PolicyAdapterContent",
+    "PolicyAuthority",
+    "PolicyDecision",
+    "PolicyDefinition",
+    "PolicyDefinitionContent",
+    "PolicyRelease",
+    "PolicyReleaseContent",
+    "PolicyScope",
+    "PolicyStatus",
+    "RiskTier",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

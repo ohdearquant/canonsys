@@ -1,0 +1,179 @@
+charter "Credit Limit Override Authorization" v1.0
+
+# CS-063 - FINANCE Domain - CREDIT_OVERRIDE Archetype
+# Risk Tier: MEDIUM-HIGH
+# Regulatory Basis: Internal Credit Policy, SOX 302/404, SEC Revenue Recognition
+
+packages:
+    - authorization
+    - certification
+    - core
+    - evidence
+    - freshness
+    - identity
+    - justification
+    - pattern
+    - policy
+    - workflow
+
+triggers:
+    override_requested
+    payment_history_verified
+    credit_assessment_completed
+    approval_obtained
+    override_granted
+
+workflow credit_limit_override:
+    phase request_intake:
+        await override_requested
+        require verify_request_source_authenticated()
+        action derive_amount_band()
+        action derive_cumulative_amount()
+        action create_workflow_run()
+        action save_evidence()
+        when customer_status == "NEW_CUSTOMER":
+            require require_type_specific_evidence()
+        evidence override_request_record
+
+    phase payment_history:
+        require request_intake.passed
+        action record_workflow_step()
+        await payment_history_verified
+        when payment_history_status == "POOR":
+            require verify_cfo_approval()
+        when dso_exceeds_threshold == true:
+            require require_type_specific_evidence()
+        evidence payment_history_record
+        certify hashable
+
+    phase credit_assessment:
+        require payment_history.passed
+        action verify_credit_freshness()
+        action record_workflow_step()
+        await credit_assessment_completed
+        when credit_score_band == "SPECULATIVE":
+            require require_type_specific_evidence()
+        evidence credit_assessment_record
+
+    phase concentration_check:
+        require credit_assessment.passed
+        action record_workflow_step()
+        when concentration_risk_exceeded == true:
+            require require_access_justification()
+        evidence concentration_check_record
+
+    phase prior_override_analysis:
+        require concentration_check.passed
+        action derive_prior_action_count()
+        action check_pattern_threshold()
+        when cumulative_overrides_customer_exceeds_threshold == true:
+            require verify_cfo_approval()
+        evidence prior_override_record
+
+    phase reason_review:
+        require prior_override_analysis.passed
+        action validate_business_justification()
+        action map_reason_code_to_evidence()
+        when override_reason_code == "STRATEGIC_ACCOUNT":
+            require verify_executive_approval()
+        when override_reason_code == "PAYMENT_PENDING":
+            require require_type_specific_evidence()
+        evidence reason_review_record
+
+    phase quarter_end_check:
+        require reason_review.passed
+        action derive_quarter_end()
+        action record_workflow_step()
+        when quarter_end_proximity_near == true:
+            require verify_cfo_approval()
+        evidence quarter_end_record
+
+    phase approval_collection:
+        require quarter_end_check.passed
+        require verify_approval_chain_complete()
+        await approval_obtained
+        when overage_percentage > 50:
+            require verify_executive_approval()
+        when overage_percentage > 100:
+            require verify_cfo_approval()
+        evidence approval_collection_record
+
+    phase evidence_binding:
+        require approval_collection.passed
+        require require_evidence_present()
+        action chain_evidence()
+        action verify_evidence_freshness()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass("credit_limit_override")
+        action evaluate_policy()
+        evidence policy_evaluation_record
+
+    phase certification:
+        require policy_evaluation.passed
+        await override_granted
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        certify immutable
+        evidence credit_limit_override_certificate
+
+situations:
+    when overage_percentage > 50:
+        require verify_executive_approval()
+
+    when overage_percentage > 100:
+        require verify_cfo_approval()
+
+    when payment_history_status == "POOR":
+        require verify_cfo_approval()
+
+    when credit_score_band == "SPECULATIVE":
+        require require_type_specific_evidence()
+
+    when customer_status == "NEW_CUSTOMER":
+        require require_type_specific_evidence()
+
+    when dso_exceeds_threshold == true:
+        require require_type_specific_evidence()
+
+    when concentration_risk_exceeded == true:
+        require require_access_justification()
+
+    when override_reason_code == "STRATEGIC_ACCOUNT":
+        require verify_executive_approval()
+
+    when override_reason_code == "PAYMENT_PENDING":
+        require require_type_specific_evidence()
+
+    when quarter_end_proximity_near == true:
+        require verify_cfo_approval()
+
+    when cumulative_overrides_customer_exceeds_threshold == true:
+        require verify_cfo_approval()
+
+roles:
+    credit_analyst:
+        actions: [save_evidence, create_workflow_run, record_workflow_step]
+        requires_mfa: true
+
+    credit_manager:
+        actions: [validate_business_justification, record_workflow_step]
+        requires_mfa: true
+
+    credit_committee:
+        actions: [record_workflow_step]
+        requires_mfa: true
+
+    controller:
+        actions: [chain_evidence, evaluate_policy]
+        requires_mfa: true
+
+    cfo:
+        actions: [emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true

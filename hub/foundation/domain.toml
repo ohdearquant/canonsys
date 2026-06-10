@@ -1,0 +1,33 @@
+[domain]
+name = "foundation"
+description = "Cross-cutting compliance primitives used by all domains"
+version = "2026.01"
+
+packages = [
+    "evidence",
+    "consent",
+    "certification",
+    "timing",
+    "authorization",
+    "policy",
+    "charter",
+    "workflow",
+    "core",
+    "identity",
+    "scope",
+    "freshness",
+    "justification",
+    "pattern",
+    "controls",
+]
+
+regulatory_basis = [
+    "FRE 901",
+    "ISO 27037",
+    "FCRA 1681b",
+    "GDPR Art. 6-7",
+    "SOC 2 CC6",
+    "NIST SP 800-63B",
+]
+
+dependencies = []

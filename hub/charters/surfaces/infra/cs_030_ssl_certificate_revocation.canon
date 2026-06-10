@@ -1,0 +1,139 @@
+charter "CS-030 SSL Certificate Revocation" v2.0
+
+packages:
+    - infra
+    - deployment
+    - controls
+    - evidence
+    - authorization
+    - lifecycle
+
+triggers:
+    certificate_revocation_requested
+    key_compromise_detected
+    certificate_expiry_imminent
+    security_incident_declared
+
+workflow ssl_certificate_revocation:
+    phase eligibility:
+        require require_entity_exists()
+        require require_context_valid()
+        require require_ca_accessible()
+        action check_eligibility()
+        evidence eligibility_record
+
+    phase facts:
+        require eligibility.passed
+        require require_facts_schema_valid()
+        require require_unknown_denied()
+        action submit_facts()
+        action capture_certificate_details()
+        evidence facts_packet
+
+    phase impact_assessment:
+        require facts.passed
+        action scan_service_inventory()
+        action calculate_affected_services()
+        action derive_data_loss_risk()
+        evidence impact_assessment_record
+        certify hashable
+
+    phase replacement_verification:
+        require impact_assessment.passed
+        require verify_backup_complete()
+        action verify_replacement_cert_status()
+        action verify_replacement_deployment()
+        evidence replacement_verification_record
+        certify hashable
+
+        when replacement_status == "PENDING":
+            await replacement_deployed
+
+    phase traffic_drain:
+        require replacement_verification.passed
+        require verify_traffic_drained()
+        action initiate_graceful_drain()
+        action verify_connection_teardown()
+        evidence traffic_drain_record
+        certify hashable
+
+    phase compromise_assessment:
+        require traffic_drain.passed
+        require require_access_justification()
+        action assess_key_compromise()
+        action document_compromise_timeline()
+        evidence compromise_assessment_record
+        certify hashable
+
+        when key_compromise == "CONFIRMED":
+            require verify_ciso_approval()
+
+    phase evidence_binding:
+        require compromise_assessment.passed
+        require require_chain_of_custody_complete()
+        action bind_evidence()
+        action create_cep()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require require_policy_pass()
+        action evaluate_policy()
+        evidence policy_result
+
+    phase certification:
+        require policy.passed
+        action seal_cep()
+        action certify_decision()
+        certify immutable
+        evidence ssl_revocation_certificate
+
+situations:
+    when key_compromise == "CONFIRMED":
+        require verify_ciso_approval()
+        require verify_executive_approval()
+
+    when key_compromise == "SUSPECTED":
+        require require_dual_approval()
+        require verify_ciso_approval()
+
+    when key_compromise == "UNKNOWN":
+        require require_dual_approval()
+
+    when affected_services_count == "HIGH":
+        require require_dual_approval()
+
+    when certificate_type == "EV":
+        require require_dual_approval()
+        require verify_gc_approval()
+
+    when certificate_type == "CODE_SIGNING":
+        require require_dual_approval()
+        require verify_ciso_approval()
+
+    when traffic_drained == "false":
+        require verify_ciso_approval()
+        require require_access_justification()
+
+    when replacement_status == "NONE":
+        require require_dual_approval()
+        require require_access_justification()
+
+roles:
+    engineer:
+        actions: [submit_facts, capture_certificate_details, scan_service_inventory]
+        requires_mfa: true
+
+    security_lead:
+        actions: [assess_key_compromise, document_compromise_timeline]
+        requires_mfa: true
+
+    platform_lead:
+        actions: [verify_replacement_cert_status, verify_replacement_deployment, initiate_graceful_drain, certify_decision]
+        requires_mfa: true
+
+    ciso:
+        actions: [seal_cep]
+        requires_mfa: true
+        break_glass: true

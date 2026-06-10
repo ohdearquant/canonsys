@@ -1,0 +1,58 @@
+# Canon Vocabulary Package Manifest
+
+[package]
+name = "notice"
+version = "2026.01"
+description = "Formal compliance notice delivery, acknowledgment tracking, and waiting period management."
+
+[package.regulatory]
+basis = [
+    "FCRA \u00a7 1681m",
+    "WARN Act",
+]
+
+[phrases]
+require = [
+    "require_notice_delivered",
+]
+
+action = [
+    "record_delivery",
+    "record_acknowledgment",
+    "create_pre_adverse",
+    "create_adverse",
+    "check_waiting",
+    "pause_waiting",
+    "resume_waiting",
+    "get_waiting",
+    "get_deliveries",
+    "create_notice",
+    "get_notice",
+]
+
+[schemas]
+types = [
+    "CheckWaitingOptions",
+    "CreateAdverseOptions",
+    "CreatePreAdverseOptions",
+    "CreateNoticeOptions",
+    "DeliveryAttempt",
+    "DeliveryMethod",
+    "DeliveryStatus",
+    "GetDeliveriesOptions",
+    "GetNoticeOptions",
+    "GetWaitingOptions",
+    "NoticeAction",
+    "NoticePayload",
+    "NoticeRequest",
+    "NoticeType",
+    "PauseWaitingOptions",
+    "RecordAcknowledgmentOptions",
+    "RecordDeliveryOptions",
+    "ResumeWaitingOptions",
+    "WaitingPeriod",
+]
+
+[dependencies]
+packages = []
+core = ["canon.enforcement", "canon.db"]

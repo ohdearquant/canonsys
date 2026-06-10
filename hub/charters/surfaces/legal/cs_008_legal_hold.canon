@@ -1,0 +1,127 @@
+charter "Legal Hold" v1.0
+
+packages:
+    - legal
+    - authorization
+    - certification
+    - evidence
+    - policy
+    - workflow
+
+triggers:
+    hold_requested
+    hold_notice_sent
+    custodian_acknowledged
+    hold_scope_finalized
+    hold_activated
+    hold_modification_requested
+    hold_release_requested
+
+workflow legal_hold:
+    phase initiation:
+        await hold_requested
+        require verify_gc_approval()
+        require require_legal_review_complete()
+        action create_workflow_run()
+        action lock_criteria()
+        evidence hold_initiation_record
+
+    phase scope_definition:
+        require initiation.passed
+        require require_nda_valid("litigation_hold")
+        action define_scope()
+        action identify_custodians()
+        when matter_type == "LITIGATION":
+            require require_legal_review_complete()
+            action verify_litigation_status()
+        when matter_type == "REGULATORY_INVESTIGATION":
+            require verify_compliance_approval()
+            action document_regulatory_basis()
+        when matter_type == "INTERNAL_INVESTIGATION":
+            require check_er_clearance()
+            action document_investigation_scope()
+        evidence scope_definition_record
+        certify hashable
+
+    phase custodian_notification:
+        require scope_definition.passed
+        action send_custodian_notices()
+        action record_workflow_step()
+        await hold_notice_sent
+        evidence notification_manifest
+
+    phase acknowledgment_collection:
+        require custodian_notification.passed
+        await custodian_acknowledged
+        action track_acknowledgments()
+        action escalate_non_responsive()
+        when acknowledgment_rate < 100:
+            require require_dual_approval()
+            action document_escalation_path()
+        evidence acknowledgment_record
+
+    phase preservation_verification:
+        require acknowledgment_collection.passed
+        await hold_scope_finalized
+        action verify_preservation_active()
+        action chain_evidence()
+        when systems_impacted == "CRITICAL":
+            require verify_cto_approval()
+            action document_system_impact()
+        when data_volume == "LARGE":
+            require verify_cfo_approval()
+            action estimate_preservation_costs()
+        evidence preservation_verification_record
+
+    phase certification:
+        require preservation_verification.passed
+        await hold_activated
+        require require_policy_pass("legal_hold_activation")
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        evidence hold_activation_certificate
+        certify immutable
+
+situations:
+    when jurisdiction == "SEC":
+        waiting_period 0..1 days
+        require require_legal_review_complete()
+
+    when jurisdiction == "DOJ":
+        waiting_period 0..1 days
+        require verify_gc_approval()
+        require require_legal_review_complete()
+
+    when matter_risk_tier == "EXISTENTIAL":
+        require verify_board_approval()
+        require require_dual_approval()
+
+    when matter_risk_tier == "HIGH_EXPOSURE":
+        require verify_gc_approval()
+
+    when third_party_data == true:
+        require require_nda_valid("third_party_preservation")
+
+roles:
+    legal_ops:
+        actions: [create_workflow_run, define_scope, identify_custodians, send_custodian_notices, track_acknowledgments]
+        requires_mfa: true
+
+    litigation_paralegal:
+        actions: [verify_preservation_active, escalate_non_responsive, document_escalation_path]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [lock_criteria, verify_litigation_status, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    it_operations:
+        actions: [document_system_impact, estimate_preservation_costs]
+        requires_mfa: true
+
+    compliance_officer:
+        actions: [document_regulatory_basis, document_investigation_scope]
+        requires_mfa: true

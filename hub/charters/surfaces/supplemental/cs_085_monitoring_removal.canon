@@ -1,0 +1,137 @@
+charter "Remove User from Monitoring Scope" v1.0
+
+schemas: canon.supplemental@2026.01
+
+packages:
+    - authorization
+    - export_control
+    - controls
+    - lifecycle
+    - evidence
+
+policies:
+    - supplemental.monitoring_removal
+
+triggers:
+    request_submitted
+    approval_granted
+    access_activated
+
+workflow monitoring_removal:
+    phase eligibility:
+        await request_submitted
+        require verify_approval_chain_complete()
+        require assess_control_coverage()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase justification:
+        require eligibility.passed
+        require require_access_justification()
+        action document_justification()
+        evidence business_justification
+        output JustificationPacket
+
+    phase security_review:
+        require justification.passed
+        require verify_ciso_approval()
+        action perform_security_review()
+        evidence security_review
+        output SecurityAssessment
+        certify hashable
+
+    phase controls_review:
+        require security_review.passed
+        require assess_control_coverage()
+        require derive_control_equivalence_score()
+        action evaluate_compensating_controls()
+        evidence compensating_controls_doc
+        output ControlsAnalysis
+
+    phase legal_review:
+        require controls_review.passed
+        require verify_gc_approval()
+        action perform_legal_review()
+        evidence legal_review
+        output LegalReview
+
+    phase privacy_review:
+        require legal_review.passed
+        require verify_dpo_approval()
+        action perform_privacy_review()
+        evidence privacy_assessment
+        output PrivacyReview
+
+    phase approvals:
+        require privacy_review.passed
+        await approval_granted
+        require schedule_midpoint_review()
+        action collect_approvals()
+        evidence review_schedule
+        output ApprovalPacket
+
+    phase policy:
+        require approvals.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await access_activated
+        action emit_certificate()
+        certify immutable
+        evidence monitoring_exemption_certificate
+        output DecisionCertificate
+
+situations:
+    when subject_privilege_level == "ADMIN":
+        require assess_control_coverage()
+        require verify_ciso_approval()
+        require verify_gc_approval()
+
+    when subject_privilege_level == "PRIVILEGED":
+        require assess_control_coverage()
+        require verify_ciso_approval()
+
+    when data_access_scope == "HIGHLY_SENSITIVE":
+        require verify_ciso_approval()
+
+    when data_access_scope == "RESTRICTED":
+        require verify_ciso_approval()
+
+    when exemption_reason_category == "LEGAL_REQUIREMENT":
+        require verify_gc_approval()
+
+    when exemption_reason_category == "PRIVACY_CONCERN":
+        require verify_dpo_approval()
+
+    when privilege_change_recertify_needed == "YES":
+        require trigger_recertification()
+
+roles:
+    exemption_requestor:
+        actions: [check_eligibility, document_justification]
+        requires_mfa: true
+
+    security_lead:
+        actions: [perform_security_review, evaluate_compensating_controls]
+        requires_mfa: true
+
+    privacy_officer:
+        actions: [perform_privacy_review]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [perform_legal_review]
+        requires_mfa: true
+
+    ciso:
+        actions: [collect_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    general_counsel:
+        actions: [perform_legal_review, emit_certificate]
+        requires_mfa: true
+        break_glass: true

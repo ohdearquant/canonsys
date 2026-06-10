@@ -1,0 +1,182 @@
+charter "Integration System Link" v1.0
+
+schemas: canon.corporate@2026.01
+
+packages:
+    - corporate
+    - legal
+    - authorization
+    - certification
+    - evidence
+
+policies:
+    - corporate.integration_system_link
+
+triggers:
+    deal_initiated
+    diligence_completed
+    condition_met
+
+workflow integration_system_link:
+    phase eligibility:
+        await deal_initiated
+        require derive_condition_satisfaction_status()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase security_assessment:
+        require eligibility.passed
+        require verify_approval_chain_complete()
+        action complete_security_assessment()
+        evidence security_assessment_report
+        output SecurityAssessment
+
+    phase conditional_findings:
+        require security_assessment.passed
+        require derive_conditional_findings_addressed()
+        action address_conditional_findings()
+        evidence finding_closure_evidence
+        output ConditionalFindingsRecord
+
+    phase integration_planning:
+        require conditional_findings.passed
+        await diligence_completed
+        require verify_approval_chain_complete()
+        action approve_integration_plan()
+        evidence integration_plan_approval
+        output IntegrationPlan
+
+    phase scope_definition:
+        require integration_planning.passed
+        require verify_approval_chain_complete()
+        action define_integration_scope()
+        evidence integration_request
+        output ScopeDocument
+
+    phase specialized_approvals:
+        require scope_definition.passed
+        require verify_approval_chain_complete()
+        action collect_specialized_approvals()
+        evidence approval_packet
+        output ApprovalPacket
+
+    phase change_management:
+        require specialized_approvals.passed
+        require verify_approval_chain_complete()
+        action approve_change_window()
+        evidence change_management_approval
+        output ChangeApproval
+
+    phase rollback_verification:
+        require change_management.passed
+        require verify_chain_of_custody_complete()
+        action test_rollback_procedure()
+        evidence rollback_test_report
+        output RollbackVerification
+
+    phase evidence_binding:
+        require rollback_verification.passed
+        require chain_evidence()
+        action bind_evidence()
+        evidence evidence_packet
+        output EvidencePacket
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await condition_met
+        action emit_certificate()
+        certify immutable
+        evidence integration_system_link_certificate
+        output DecisionCertificate
+
+situations:
+    when deal_status == "PRE_CLOSE":
+        require verify_executive_approval()
+
+    when closing_date_status == "BEFORE_CLOSE":
+        require verify_executive_approval()
+
+    when source_system_classification == "CRITICAL":
+        require verify_ciso_approval()
+
+    when target_system_classification == "CRITICAL":
+        require verify_ciso_approval()
+
+    when source_system_classification == "RESTRICTED":
+        require verify_approval_chain_complete()
+
+    when target_system_classification == "RESTRICTED":
+        require verify_approval_chain_complete()
+
+    when data_types_contains_credentials == "YES":
+        require verify_ciso_approval()
+
+    when data_types_contains_pii == "YES":
+        require verify_dpo_approval()
+
+    when data_types_contains_financial == "YES":
+        require verify_cfo_approval()
+
+    when integration_type == "AUTHENTICATION_FEDERATION":
+        require verify_ciso_approval()
+
+    when integration_type == "FULL_MERGE":
+        require verify_board_approval()
+
+    when integration_type == "NETWORK_BRIDGE":
+        require verify_ciso_approval()
+
+    when reversibility_status == "IRREVERSIBLE":
+        require verify_executive_approval()
+
+    when reversibility_status == "PARTIALLY_REVERSIBLE":
+        require verify_approval_chain_complete()
+
+    when direction == "BIDIRECTIONAL":
+        require verify_approval_chain_complete()
+
+    when approval_freshness_exceeds_limit == "YES":
+        require verify_approval_chain_complete()
+
+    when security_assessment_status == "COMPLETE_CONDITIONAL":
+        require derive_conditional_findings_addressed()
+
+roles:
+    integration_lead:
+        actions: [check_eligibility, define_integration_scope, approve_change_window]
+        requires_mfa: true
+
+    security_team:
+        actions: [complete_security_assessment, address_conditional_findings]
+        requires_mfa: true
+
+    ciso:
+        actions: [approve_integration_plan, collect_specialized_approvals]
+        requires_mfa: true
+        break_glass: true
+
+    network_lead:
+        actions: [test_rollback_procedure, approve_change_window]
+        requires_mfa: true
+
+    identity_lead:
+        actions: [collect_specialized_approvals]
+        requires_mfa: true
+
+    cto:
+        actions: [bind_evidence, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    deal_committee:
+        actions: [collect_specialized_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true

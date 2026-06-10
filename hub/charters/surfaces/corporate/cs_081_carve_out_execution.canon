@@ -1,0 +1,195 @@
+charter "Carve-Out Execution" v1.0
+
+schemas: canon.corporate@2026.01
+
+packages:
+    - corporate
+    - legal
+    - authorization
+    - certification
+    - evidence
+
+policies:
+    - corporate.carve_out_execution
+
+triggers:
+    deal_initiated
+    diligence_completed
+    condition_met
+
+workflow carve_out_execution:
+    phase eligibility:
+        await deal_initiated
+        require derive_carve_out_readiness()
+        require derive_clean_team_required()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase separation_planning:
+        require eligibility.passed
+        require derive_carve_out_readiness()
+        require verify_approval_chain_complete()
+        action approve_separation_plan()
+        evidence separation_plan
+        output SeparationPlan
+
+    phase tsa_negotiation:
+        require separation_planning.passed
+        await diligence_completed
+        require verify_gc_approval()
+        action execute_tsa()
+        evidence tsa_agreement
+        output TSADocument
+
+    phase employee_transition:
+        require tsa_negotiation.passed
+        require verify_hr_approval()
+        action complete_employee_transition()
+        evidence offer_letter_summary
+        output EmployeePacket
+
+    phase customer_transition:
+        require employee_transition.passed
+        require verify_approval_chain_complete()
+        action complete_customer_transition()
+        evidence contract_assignment_summary
+        output CustomerPacket
+
+    phase data_migration_prep:
+        require customer_transition.passed
+        require verify_chain_of_custody_complete()
+        action test_data_migration()
+        evidence data_migration_test_report
+        output DataMigrationReport
+
+    phase shared_services_handoff:
+        require data_migration_prep.passed
+        require verify_approval_chain_complete()
+        action verify_shared_services_handoff()
+        evidence shared_services_inventory
+        output ServicesInventory
+
+    phase day_one_readiness:
+        require shared_services_handoff.passed
+        require derive_carve_out_readiness()
+        action verify_day_one_readiness()
+        evidence day_one_checklist
+        output ReadinessReport
+
+    phase executive_approval:
+        require day_one_readiness.passed
+        require verify_board_approval()
+        require verify_gc_approval()
+        require verify_cfo_approval()
+        action collect_executive_approvals()
+        evidence board_resolution
+        output ApprovalPacket
+
+    phase evidence_binding:
+        require executive_approval.passed
+        require chain_evidence()
+        action bind_evidence()
+        evidence evidence_packet
+        output EvidencePacket
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await condition_met
+        action emit_certificate()
+        certify immutable
+        evidence carve_out_execution_certificate
+        output DecisionCertificate
+
+situations:
+    when separation_completeness == "HEAVILY_ENTANGLED":
+        require verify_gc_approval()
+
+    when separation_completeness == "PARTIAL_TSA":
+        require verify_gc_approval()
+
+    when employee_count_exceeds_hr_threshold == "YES":
+        require verify_hr_approval()
+
+    when customer_count_exceeds_threshold == "YES":
+        require verify_executive_approval()
+
+    when shared_services_count_exceeds_threshold == "YES":
+        require verify_cto_approval()
+
+    when data_volume_band == "LARGE":
+        require verify_dpo_approval()
+
+    when data_volume_band == "MASSIVE":
+        require verify_dpo_approval()
+        require verify_ciso_approval()
+
+    when carve_out_readiness == "NOT_READY":
+        require derive_carve_out_readiness()
+
+    when carve_out_readiness == "CONDITIONALLY_READY":
+        require derive_carve_out_readiness()
+
+    when regulatory_approval_status == "PENDING":
+        require verify_gc_approval()
+
+    when customer_notification_status == "IN_PROGRESS":
+        require verify_approval_chain_complete()
+
+    when tsa_status == "EXPIRED":
+        require verify_gc_approval()
+
+    when jurisdiction == "US":
+        require verify_gc_approval()
+
+    when jurisdiction == "EU":
+        require verify_gc_approval()
+        require verify_dpo_approval()
+
+roles:
+    carve_out_lead:
+        actions: [check_eligibility, approve_separation_plan, verify_day_one_readiness]
+        requires_mfa: true
+
+    hr_lead:
+        actions: [complete_employee_transition]
+        requires_mfa: true
+
+    commercial_lead:
+        actions: [complete_customer_transition]
+        requires_mfa: true
+
+    it_lead:
+        actions: [execute_tsa, test_data_migration, verify_shared_services_handoff]
+        requires_mfa: true
+
+    chro:
+        actions: [complete_employee_transition, collect_executive_approvals]
+        requires_mfa: true
+        break_glass: true
+
+    cto:
+        actions: [verify_shared_services_handoff, collect_executive_approvals]
+        requires_mfa: true
+        break_glass: true
+
+    cfo:
+        actions: [collect_executive_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    general_counsel:
+        actions: [bind_evidence, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    ceo:
+        actions: [collect_executive_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true

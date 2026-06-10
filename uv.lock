@@ -10,6 +10,31 @@ resolution-markers = [
 [manifest]
 members = [
     "canon",
+    "canon-catalogs",
+    "canon-vocab-ai-governance",
+    "canon-vocab-authorization",
+    "canon-vocab-certification",
+    "canon-vocab-charter",
+    "canon-vocab-consent",
+    "canon-vocab-controls",
+    "canon-vocab-core",
+    "canon-vocab-corporate",
+    "canon-vocab-data-protection",
+    "canon-vocab-deployment",
+    "canon-vocab-evidence",
+    "canon-vocab-export-control",
+    "canon-vocab-freshness",
+    "canon-vocab-identity",
+    "canon-vocab-incident",
+    "canon-vocab-infra",
+    "canon-vocab-justification",
+    "canon-vocab-legal",
+    "canon-vocab-notice",
+    "canon-vocab-pattern",
+    "canon-vocab-policy",
+    "canon-vocab-scope",
+    "canon-vocab-timing",
+    "canon-vocab-workflow",
     "canonsys-workspace",
     "kron",
 ]
@@ -138,6 +163,281 @@ requires-dist = [
 provides-extras = ["rego"]
 
 [[package]]
+name = "canon-catalogs"
+version = "2026.1.0"
+source = { editable = "hub/catalogs" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-ai-governance"
+version = "2026.1.0"
+source = { editable = "hub/domains/governance/packages/ai_governance" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-authorization"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/authorization" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-certification"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/certification" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-charter"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/charter" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-consent"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/consent" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-controls"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/controls" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-core"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/core" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-corporate"
+version = "2026.1.0"
+source = { editable = "hub/domains/corporate/packages/corporate" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-data-protection"
+version = "2026.1.0"
+source = { editable = "hub/domains/governance/packages/data_protection" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-deployment"
+version = "2026.1.0"
+source = { editable = "hub/domains/corporate/packages/deployment" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-evidence"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/evidence" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-export-control"
+version = "2026.1.0"
+source = { editable = "hub/domains/governance/packages/export_control" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-freshness"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/freshness" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-identity"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/identity" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-incident"
+version = "2026.1.0"
+source = { editable = "hub/domains/governance/packages/incident" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-infra"
+version = "2026.1.0"
+source = { editable = "hub/domains/corporate/packages/infra" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-justification"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/justification" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-legal"
+version = "2026.1.0"
+source = { editable = "hub/domains/governance/packages/legal" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-notice"
+version = "2026.1.0"
+source = { editable = "hub/domains/governance/packages/notice" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-pattern"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/pattern" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-policy"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/policy" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-scope"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/scope" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-timing"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/timing" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
+name = "canon-vocab-workflow"
+version = "2026.1.0"
+source = { editable = "hub/foundation/packages/workflow" }
+dependencies = [
+    { name = "canon" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "canon", editable = "libs/canon" }]
+
+[[package]]
 name = "canonsys-workspace"
 version = "0.0.0"
 source = { virtual = "." }
@@ -145,6 +445,31 @@ source = { virtual = "." }
 [package.dev-dependencies]
 dev = [
     { name = "canon" },
+    { name = "canon-catalogs" },
+    { name = "canon-vocab-ai-governance" },
+    { name = "canon-vocab-authorization" },
+    { name = "canon-vocab-certification" },
+    { name = "canon-vocab-charter" },
+    { name = "canon-vocab-consent" },
+    { name = "canon-vocab-controls" },
+    { name = "canon-vocab-core" },
+    { name = "canon-vocab-corporate" },
+    { name = "canon-vocab-data-protection" },
+    { name = "canon-vocab-deployment" },
+    { name = "canon-vocab-evidence" },
+    { name = "canon-vocab-export-control" },
+    { name = "canon-vocab-freshness" },
+    { name = "canon-vocab-identity" },
+    { name = "canon-vocab-incident" },
+    { name = "canon-vocab-infra" },
+    { name = "canon-vocab-justification" },
+    { name = "canon-vocab-legal" },
+    { name = "canon-vocab-notice" },
+    { name = "canon-vocab-pattern" },
+    { name = "canon-vocab-policy" },
+    { name = "canon-vocab-scope" },
+    { name = "canon-vocab-timing" },
+    { name = "canon-vocab-workflow" },
     { name = "kron" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -156,6 +481,31 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "canon", editable = "libs/canon" },
+    { name = "canon-catalogs", editable = "hub/catalogs" },
+    { name = "canon-vocab-ai-governance", editable = "hub/domains/governance/packages/ai_governance" },
+    { name = "canon-vocab-authorization", editable = "hub/foundation/packages/authorization" },
+    { name = "canon-vocab-certification", editable = "hub/foundation/packages/certification" },
+    { name = "canon-vocab-charter", editable = "hub/foundation/packages/charter" },
+    { name = "canon-vocab-consent", editable = "hub/foundation/packages/consent" },
+    { name = "canon-vocab-controls", editable = "hub/foundation/packages/controls" },
+    { name = "canon-vocab-core", editable = "hub/foundation/packages/core" },
+    { name = "canon-vocab-corporate", editable = "hub/domains/corporate/packages/corporate" },
+    { name = "canon-vocab-data-protection", editable = "hub/domains/governance/packages/data_protection" },
+    { name = "canon-vocab-deployment", editable = "hub/domains/corporate/packages/deployment" },
+    { name = "canon-vocab-evidence", editable = "hub/foundation/packages/evidence" },
+    { name = "canon-vocab-export-control", editable = "hub/domains/governance/packages/export_control" },
+    { name = "canon-vocab-freshness", editable = "hub/foundation/packages/freshness" },
+    { name = "canon-vocab-identity", editable = "hub/foundation/packages/identity" },
+    { name = "canon-vocab-incident", editable = "hub/domains/governance/packages/incident" },
+    { name = "canon-vocab-infra", editable = "hub/domains/corporate/packages/infra" },
+    { name = "canon-vocab-justification", editable = "hub/foundation/packages/justification" },
+    { name = "canon-vocab-legal", editable = "hub/domains/governance/packages/legal" },
+    { name = "canon-vocab-notice", editable = "hub/domains/governance/packages/notice" },
+    { name = "canon-vocab-pattern", editable = "hub/foundation/packages/pattern" },
+    { name = "canon-vocab-policy", editable = "hub/foundation/packages/policy" },
+    { name = "canon-vocab-scope", editable = "hub/foundation/packages/scope" },
+    { name = "canon-vocab-timing", editable = "hub/foundation/packages/timing" },
+    { name = "canon-vocab-workflow", editable = "hub/foundation/packages/workflow" },
     { name = "kron", editable = "libs/kron" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },

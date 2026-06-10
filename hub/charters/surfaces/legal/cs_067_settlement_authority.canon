@@ -1,0 +1,194 @@
+charter "Settlement Authority" v1.0
+
+packages:
+    - legal
+    - authorization
+    - certification
+    - evidence
+    - policy
+    - workflow
+
+triggers:
+    settlement_proposed
+    terms_negotiated
+    financial_analysis_completed
+    coverage_confirmed
+    cfo_reviewed
+    board_notified
+    settlement_executed
+
+workflow settlement_authority:
+    phase initiation:
+        await settlement_proposed
+        require require_legal_review_complete()
+        require verify_gc_approval()
+        action create_workflow_run()
+        action lock_criteria()
+        evidence settlement_initiation_record
+
+    phase term_sheet:
+        require initiation.passed
+        await terms_negotiated
+        require require_nda_valid("settlement_negotiation")
+        action submit_term_sheet()
+        action chain_evidence()
+        when matter_type == "CLASS_ACTION":
+            require verify_board_approval()
+            require require_legal_review_complete()
+        when matter_type == "SECURITIES":
+            require verify_board_approval()
+            require verify_gc_approval()
+        when matter_type == "CRIMINAL":
+            require verify_board_approval()
+            require verify_executive_approval()
+            action obtain_ceo_acknowledgment()
+        evidence settlement_term_sheet
+        certify hashable
+
+    phase financial_analysis:
+        require term_sheet.passed
+        await financial_analysis_completed
+        action analyze_financial_impact()
+        action record_workflow_step()
+        when materiality_band == "ROUTINE":
+            action document_financial_impact()
+        when materiality_band == "MATERIAL":
+            require verify_cfo_approval()
+            action obtain_cfo_signoff()
+        when materiality_band == "HIGHLY_MATERIAL":
+            require verify_cfo_approval()
+            require verify_executive_approval()
+            action document_board_notification()
+        when materiality_band == "BOARD_LEVEL":
+            require verify_board_approval()
+            require verify_cfo_approval()
+            action schedule_board_vote()
+        evidence financial_impact_analysis
+
+    phase coverage_analysis:
+        require financial_analysis.passed
+        await coverage_confirmed
+        action confirm_insurance_coverage()
+        action save_evidence()
+        when coverage_status == "FULL":
+            action document_coverage_position()
+        when coverage_status == "PARTIAL":
+            require verify_cfo_approval()
+            action document_coverage_gap()
+        when coverage_status == "DISPUTED":
+            require verify_gc_approval()
+            require require_legal_review_complete()
+            action document_coverage_risk()
+        when coverage_status == "NONE":
+            require verify_board_approval()
+            require verify_cfo_approval()
+            action document_no_coverage_impact()
+        evidence coverage_opinion
+
+    phase precedent_analysis:
+        require coverage_analysis.passed
+        require require_legal_review_complete()
+        action assess_precedent_risk()
+        action chain_evidence()
+        when precedent_risk == "LOW":
+            action document_precedent_minimal()
+        when precedent_risk == "MODERATE":
+            require verify_gc_approval()
+            action document_precedent_considerations()
+        when precedent_risk == "HIGH":
+            require verify_board_approval()
+            action document_precedent_mitigation()
+        when precedent_risk == "INDUSTRY_WIDE":
+            require verify_board_approval()
+            require verify_executive_approval()
+            action obtain_industry_counsel()
+        evidence precedent_analysis
+
+    phase approval_chain:
+        require precedent_analysis.passed
+        await cfo_reviewed
+        require verify_approval_chain_complete()
+        action obtain_cfo_review()
+        action obtain_counsel_recommendation()
+        when admission_type == "NO_ADMISSION":
+            action document_no_admission()
+        when admission_type == "LIABILITY_ADMISSION":
+            require verify_board_approval()
+            action document_liability_implications()
+        when admission_type == "REGULATORY_ADMISSION":
+            require verify_board_approval()
+            require verify_gc_approval()
+            action document_regulatory_implications()
+        evidence approval_chain_record
+        certify hashable
+
+    phase board_process:
+        require approval_chain.passed
+        await board_notified
+        action process_board_notification()
+        action record_workflow_step()
+        when non_monetary_terms == "NONE":
+            action document_monetary_only()
+        when non_monetary_terms == "INCLUDES_INJUNCTION":
+            require verify_executive_approval()
+            require verify_gc_approval()
+            action document_injunction_scope()
+        when non_monetary_terms == "MONITORSHIP":
+            require verify_board_approval()
+            action document_monitorship_terms()
+        when non_monetary_terms == "CONSENT_DECREE":
+            require verify_board_approval()
+            require verify_executive_approval()
+            action document_consent_decree_obligations()
+        evidence board_documentation
+
+    phase certification:
+        require board_process.passed
+        await settlement_executed
+        require require_policy_pass("settlement_authority")
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        evidence settlement_authority_certificate
+        certify immutable
+
+situations:
+    when settlement_amount >= 10000000:
+        require verify_board_approval()
+        require verify_cfo_approval()
+
+    when settlement_deadline < 7:
+        require verify_gc_approval()
+        waiting_period 0..3 days
+
+    when multi_party_settlement == true:
+        require require_legal_review_complete()
+        require require_nda_valid("multi_party_settlement")
+
+roles:
+    litigation_counsel:
+        actions: [create_workflow_run, submit_term_sheet, assess_precedent_risk, obtain_counsel_recommendation, document_precedent_minimal, document_precedent_considerations]
+        requires_mfa: true
+
+    cfo:
+        actions: [analyze_financial_impact, obtain_cfo_review, document_financial_impact, obtain_cfo_signoff, document_coverage_gap, document_no_coverage_impact]
+        requires_mfa: true
+
+    insurance_counsel:
+        actions: [confirm_insurance_coverage, document_coverage_position, document_coverage_risk]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [lock_criteria, process_board_notification, emit_certificate, record_attestation, document_liability_implications, document_regulatory_implications]
+        requires_mfa: true
+        break_glass: true
+
+    board_secretary:
+        actions: [schedule_board_vote, document_board_notification, document_injunction_scope, document_monitorship_terms, document_consent_decree_obligations]
+        requires_mfa: true
+
+    ceo:
+        actions: [obtain_ceo_acknowledgment]
+        requires_mfa: true
+        break_glass: true

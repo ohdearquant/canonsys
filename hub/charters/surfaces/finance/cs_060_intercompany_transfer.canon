@@ -1,0 +1,183 @@
+charter "Intercompany Transfer Authorization" v1.0
+
+# CS-060 - FINANCE Domain - INTERCOMPANY_TRANSFER Archetype
+# Risk Tier: HIGH
+# Regulatory Basis: Transfer Pricing Regulations, OECD Guidelines, SOX 302/404
+
+packages:
+    - authorization
+    - certification
+    - core
+    - evidence
+    - freshness
+    - identity
+    - justification
+    - legal
+    - pattern
+    - policy
+    - workflow
+
+triggers:
+    transfer_requested
+    business_purpose_documented
+    transfer_pricing_completed
+    tax_review_approved
+    executive_approved
+    transfer_executed
+
+workflow intercompany_transfer:
+    phase request_intake:
+        await transfer_requested
+        require verify_request_source_authenticated()
+        action derive_amount_band()
+        action create_workflow_run()
+        action save_evidence()
+        when cross_border_status == "CROSS_BORDER":
+            require require_legal_review_complete()
+        evidence transfer_request_record
+
+    phase business_purpose:
+        require request_intake.passed
+        action validate_business_justification()
+        action record_workflow_step()
+        await business_purpose_documented
+        when transfer_type == "LOAN":
+            require require_type_specific_evidence()
+        when transfer_type == "SERVICE_FEE":
+            require require_type_specific_evidence()
+        when transfer_type == "DIVIDEND":
+            require verify_board_approval()
+        when transfer_type == "IP_ROYALTY":
+            require require_type_specific_evidence()
+        evidence business_purpose_record
+        certify hashable
+
+    phase transfer_pricing:
+        require business_purpose.passed
+        action record_workflow_step()
+        await transfer_pricing_completed
+        when arm_length_status == "DEVIATION":
+            require verify_cfo_approval()
+        evidence transfer_pricing_record
+
+    phase entity_analysis:
+        require transfer_pricing.passed
+        action derive_prior_action_count()
+        action check_pattern_threshold()
+        when entity_count_exceeds_threshold == true:
+            require verify_executive_approval()
+        when prior_transfers_same_pair_exceeds_threshold == true:
+            require verify_executive_approval()
+        evidence entity_analysis_record
+
+    phase tax_review:
+        require entity_analysis.passed
+        require require_legal_review_complete()
+        action record_workflow_step()
+        await tax_review_approved
+        when cross_border_status == "CROSS_BORDER":
+            require verify_compliance_approval()
+        evidence tax_review_record
+
+    phase quarter_end_check:
+        require tax_review.passed
+        action derive_quarter_end()
+        action record_workflow_step()
+        when quarter_end_proximity_near == true:
+            require verify_cfo_approval()
+        evidence quarter_end_record
+
+    phase executive_approval:
+        require quarter_end_check.passed
+        require verify_approval_chain_complete()
+        await executive_approved
+        when amount_band == "MATERIAL":
+            require verify_cfo_approval()
+        when amount_band == "SIGNIFICANT":
+            require verify_cfo_approval()
+            require verify_board_approval()
+        evidence executive_approval_record
+
+    phase evidence_binding:
+        require executive_approval.passed
+        require require_evidence_present()
+        action chain_evidence()
+        evidence evidence_packet
+        certify hashable
+
+    phase policy_evaluation:
+        require evidence_binding.passed
+        require require_policy_pass("intercompany_transfer")
+        require require_sox_compliance_review()
+        action evaluate_policy()
+        evidence policy_evaluation_record
+
+    phase certification:
+        require policy_evaluation.passed
+        await transfer_executed
+        action verify_case_integrity()
+        action get_case_history()
+        action emit_certificate()
+        action record_attestation()
+        certify immutable
+        evidence intercompany_transfer_certificate
+
+situations:
+    when cross_border_status == "CROSS_BORDER":
+        require require_legal_review_complete()
+        require verify_compliance_approval()
+
+    when amount_band == "MATERIAL":
+        require verify_cfo_approval()
+
+    when amount_band == "SIGNIFICANT":
+        require verify_cfo_approval()
+        require verify_board_approval()
+
+    when entity_count_exceeds_threshold == true:
+        require verify_executive_approval()
+
+    when transfer_type == "LOAN":
+        require require_type_specific_evidence()
+
+    when transfer_type == "SERVICE_FEE":
+        require require_type_specific_evidence()
+
+    when transfer_type == "DIVIDEND":
+        require verify_board_approval()
+
+    when transfer_type == "IP_ROYALTY":
+        require require_type_specific_evidence()
+
+    when quarter_end_proximity_near == true:
+        require verify_cfo_approval()
+
+    when prior_transfers_same_pair_exceeds_threshold == true:
+        require verify_executive_approval()
+
+roles:
+    treasury_analyst:
+        actions: [save_evidence, create_workflow_run, record_workflow_step]
+        requires_mfa: true
+
+    transfer_pricing_analyst:
+        actions: [validate_business_justification, record_workflow_step]
+        requires_mfa: true
+
+    tax_director:
+        actions: [record_workflow_step]
+        requires_mfa: true
+
+    controller:
+        actions: [chain_evidence, evaluate_policy]
+        requires_mfa: true
+
+    treasurer:
+        actions: [record_workflow_step]
+        requires_mfa: true
+        break_glass: true
+
+    cfo:
+        actions: [emit_certificate, record_attestation]
+        requires_mfa: true
+        break_glass: true

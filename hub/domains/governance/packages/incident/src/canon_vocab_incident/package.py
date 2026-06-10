@@ -1,0 +1,33 @@
+"""Incident vocabulary package metadata."""
+
+from canon.hub.package import VocabularyPackage
+
+INCIDENT = VocabularyPackage(
+    name="incident",
+    description="Incident declaration, containment verification, and root cause identification.",
+    feature_names=frozenset(
+        {
+            "require_containment_verified",
+            "require_incident_declared",
+            "require_root_cause_identified",
+            "verify_containment_verified",
+            "verify_root_cause_identified",
+        }
+    ),
+    schema_names=frozenset(
+        {
+            "ContainmentStatus",
+            "ContainmentVerificationStatus",
+            "RootCauseStatus",
+        }
+    ),
+    regulatory_basis=(
+        "GDPR Art. 33",
+        "HIPAA \u00a7 164.308",
+        "SOC 2 CC7.2-CC7.4",
+        "ISO 27001 A.16.1.6",
+        "NIST SP 800-61",
+    ),
+    version="2026.01",
+    domain_module="canon_vocab_incident",
+)

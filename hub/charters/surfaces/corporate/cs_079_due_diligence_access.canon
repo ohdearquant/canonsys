@@ -1,0 +1,170 @@
+charter "Due Diligence Access" v1.0
+
+schemas: canon.corporate@2026.01
+
+packages:
+    - corporate
+    - legal
+    - authorization
+    - certification
+    - evidence
+
+policies:
+    - corporate.due_diligence_access
+
+triggers:
+    deal_initiated
+    diligence_completed
+    condition_met
+
+workflow due_diligence_access:
+    phase eligibility:
+        await deal_initiated
+        require derive_clean_team_required()
+        require verify_approval_chain_complete()
+        action check_eligibility()
+        output EligibilityCheck
+
+    phase nda_verification:
+        require eligibility.passed
+        require require_nda_valid()
+        require verify_nda_status()
+        action verify_nda_status()
+        evidence nda_document
+        output NDAVerification
+
+    phase scope_definition:
+        require nda_verification.passed
+        require verify_approval_chain_complete()
+        action define_access_scope()
+        evidence access_request
+        output ScopeDocument
+
+    phase classification_review:
+        require scope_definition.passed
+        require verify_approval_chain_complete()
+        action review_data_classification()
+        evidence classification_review
+        output ClassificationReview
+
+    phase individual_nda_verification:
+        require classification_review.passed
+        require require_nda_valid()
+        action verify_individual_nda_coverage()
+        evidence individual_nda_signatures
+        output IndividualNDAVerification
+
+    phase clean_team_setup:
+        require individual_nda_verification.passed
+        await diligence_completed
+        require derive_clean_team_required()
+        require verify_clean_team_membership()
+        action setup_clean_team()
+        evidence clean_team_agreement
+        output CleanTeamSetup
+
+    phase specialized_approvals:
+        require clean_team_setup.passed
+        require verify_approval_chain_complete()
+        action collect_specialized_approvals()
+        evidence approval_packet
+        output ApprovalPacket
+
+    phase controls_configuration:
+        require specialized_approvals.passed
+        require verify_chain_of_custody_complete()
+        action configure_data_room_controls()
+        evidence data_room_config
+        output ControlsConfig
+
+    phase evidence_binding:
+        require controls_configuration.passed
+        require chain_evidence()
+        action bind_evidence()
+        evidence evidence_packet
+        output EvidencePacket
+        certify hashable
+
+    phase policy:
+        require evidence_binding.passed
+        require evaluate_policy()
+        action evaluate_policy()
+        output PolicyResult
+
+    phase certification:
+        require policy.passed
+        await condition_met
+        action emit_certificate()
+        certify immutable
+        evidence due_diligence_access_certificate
+        output DecisionCertificate
+
+situations:
+    when deal_value_band == "LARGE":
+        require verify_board_approval()
+
+    when deal_value_band == "STRATEGIC":
+        require verify_board_approval()
+        require verify_cfo_approval()
+
+    when data_classification == "RESTRICTED":
+        require verify_gc_approval()
+
+    when data_classification == "HIGHLY_CONFIDENTIAL":
+        require verify_executive_approval()
+
+    when data_categories_contains_employee == "YES":
+        require verify_hr_approval()
+
+    when data_categories_contains_customer == "YES":
+        require verify_compliance_approval()
+
+    when data_categories_contains_ip == "YES":
+        require verify_gc_approval()
+
+    when access_scope == "EXPANDED":
+        require verify_executive_approval()
+
+    when access_scope == "FULL":
+        require verify_executive_approval()
+
+    when entity_count_exceeds_threshold == "YES":
+        require verify_approval_chain_complete()
+
+    when competitor_flag == "YES":
+        require derive_clean_team_required()
+        require require_clean_team_for_competitive_intel()
+
+    when nda_age_exceeds_limit == "YES":
+        require require_nda_valid()
+
+    when hsr_filing_required == "YES":
+        require verify_gc_approval()
+
+roles:
+    deal_team:
+        actions: [check_eligibility, define_access_scope, configure_data_room_controls]
+        requires_mfa: true
+
+    legal_counsel:
+        actions: [verify_nda_status, review_data_classification, verify_individual_nda_coverage]
+        requires_mfa: true
+
+    deal_lead:
+        actions: [setup_clean_team, collect_specialized_approvals]
+        requires_mfa: true
+
+    general_counsel:
+        actions: [bind_evidence, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    deal_committee:
+        actions: [collect_specialized_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true
+
+    cfo:
+        actions: [collect_specialized_approvals, emit_certificate]
+        requires_mfa: true
+        break_glass: true
